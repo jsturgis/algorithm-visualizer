@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Algorithms, Step by Step</title>
+<meta name="description" content="Interactive, step-through visualizations for learning algorithms.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <h1>Algorithms, step by step</h1>
+    <p>Each page runs an algorithm one line at a time. Watch the variables change, read why each step happens, and try it on your own input.</p>
+  </header>
+
+  <div class="find">
+    <input type="search" id="q" placeholder="Search algorithms" aria-label="Search algorithms">
+    <div class="chips" id="chips"></div>
+  </div>
+  <p class="count" id="count"></p>
+  <div class="cards" id="cards"></div>
+  <p class="keys">On every page: <kbd>Space</kbd> play/pause · <kbd>←</kbd> <kbd>→</kbd> step · <kbd>R</kbd> restart</p>
+</div>
+
+<script type="module">import "virtual:home";</script>
+</body>
+</html>

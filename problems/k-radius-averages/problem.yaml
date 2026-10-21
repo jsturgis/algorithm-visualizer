@@ -1,0 +1,22 @@
+title: K Radius Subarray Averages
+summary: Average every window of 2k + 1 numbers with one prefix-sum subtraction each.
+explanation: >-
+  For each index `i`, average the `2k + 1` numbers from `i − k` to `i + k` (integer division),
+  or write `-1` if that range runs off either end. Re-adding every window costs `O(n·k)`.
+  Instead, build a prefix-sum array once, where `prefix[j]` is the sum of the first `j` numbers.
+  Then any window's sum is one subtraction: everything through its right end, minus everything
+  before its left end.
+source: LeetCode 2090
+tags: [Arrays, Prefix sum]
+complexity: { time: O(n), space: O(n) }
+entry: getAverages
+limits: { time_ms: 500 }
+input:
+  - { name: nums, type: "int[]", length: [1, 100000], value: [0, 100000] }
+  - { name: k, type: int, value: [0, 100000] }
+visualization:
+  default: { nums: [7, 4, 3, 9, 1, 8, 5, 2, 6], k: 3 }
+  limits:
+    nums: { length: [1, 12] }
+    k: { value: [0, 9] }
+  code_note: Prefix sums. <code>Math.floor</code> matches truncation here because every number is non-negative.

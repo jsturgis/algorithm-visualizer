@@ -1,0 +1,7 @@
+/* Pointer labels under each box */
+.ptrs { display: grid; gap: 2px; justify-items: center; align-content: start; min-height: 54px; font: 600 11px var(--mono); }
+.ptr { padding: 1px 6px; border-radius: 4px; }
+.ptr.lo { color: var(--curve); background: var(--curve-soft); }
+.ptr.hi { color: var(--low); background: var(--low-soft); }
+.ptr.mid { color: var(--cur); background: var(--cur-soft); }
+.range { font: 13px var(--mono); color: var(--muted); text-align: center; margin: 8px 0 0; }

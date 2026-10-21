@@ -1,0 +1,21 @@
+title: Binary Search
+summary: Find a value in a sorted array by halving the search range on every comparison.
+explanation: >-
+  Find `target` in a sorted array by checking the middle of the range that could still hold it.
+  Each comparison throws away half of that range, so even a million items take only about 20 checks.
+source: LeetCode 704
+tags: [Arrays, Searching]
+complexity: { time: O(log n), space: O(1) }
+entry: search
+limits: { time_ms: 100 }
+input:
+  - { name: nums, type: "int[]", length: [1, 10000], value: [-9999, 9999] }
+  - { name: target, type: int, value: [-9999, 9999] }
+constraints_note:
+  - "`nums` is sorted in ascending order."
+  - "All values in `nums` are distinct."
+visualization:
+  default: { nums: [2, 5, 8, 12, 16, 23, 38, 56, 72, 91], target: 23 }
+  limits:
+    nums: { length: [1, 16] }
+  labels: { nums: Array (sorted for you), target: Target }

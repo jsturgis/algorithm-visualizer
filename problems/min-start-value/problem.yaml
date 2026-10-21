@@ -1,0 +1,19 @@
+title: Minimum Start Value
+summary: Track the lowest running sum to find the smallest start that keeps every total at least 1.
+explanation: >-
+  Add the numbers one at a time to `startValue`. The running total must never drop below 1.
+  Track the running sum with `startValue = 0` and find its lowest point. Then pick the smallest
+  `startValue` that lifts that lowest point up to 1.
+source: LeetCode 1413
+tags: [Arrays, Prefix sum]
+complexity: { time: O(n), space: O(1) }
+entry: minStartValue
+limits: { time_ms: 100 }
+input:
+  - { name: nums, type: "int[]", length: [1, 100], value: [-100, 100] }
+visualization:
+  default: { nums: [-3, 2, -3, 4, 2] }
+  limits:
+    nums: { length: [1, 12] }
+  labels: { nums: Try your own array }
+  code_note: The standard O(n) solution, one pass tracking the lowest prefix sum.

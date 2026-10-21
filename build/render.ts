@@ -1,0 +1,77 @@
+// The HTML shell for one algorithm page. The player and the package's view fill in the data-* placeholders.
+import { marked } from "marked";
+import type { Param } from "../src/runtime/types.ts";
+import type { Package } from "./package.ts";
+
+const esc = (s: unknown) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const num = (n: number) => n.toLocaleString("en-US");
+
+function constraintLines(params: Param[]): string[] {
+  return params.flatMap(p => {
+    const out: string[] = [];
+    if (p.length) out.push(`${num(p.length[0])} ≤ ${p.name}.length ≤ ${num(p.length[1])}`);
+    if (p.value) out.push(`${num(p.value[0])} ≤ ${p.type === "int[]" ? `${p.name}[i]` : p.name} ≤ ${num(p.value[1])}`);
+    return out;
+  });
+}
+
+const show = (v: unknown) => JSON.stringify(v).replace(/,/g, ", ");
+
+/** The page's <body> content, without scripts. Tests mount this directly. */
+export function renderBody(pkg: Package): string {
+  const { meta } = pkg;
+  const examples = pkg.samples.map((t, i) => `
+      <p><b>Example ${i + 1}</b></p>
+      <pre>Input: ${esc(meta.input.map(p => `${p.name} = ${show(t.input[p.name])}`).join(", "))}
+Output: ${esc(show(t.answer))}</pre>`).join("");
+
+  return `
+<div class="wrap">
+  <nav class="topbar"><a class="brand" href="../../">Algorithms, step by step</a><a href="../../">← All algorithms</a></nav>
+
+  <header>
+    <h1>${esc(meta.title)}</h1>
+    <p>${marked.parseInline(meta.explanation)}</p>
+    <div class="meta">${meta.tags.map(t => `<span class="tag">${esc(t)}</span>`).join("")}<span class="tag mono">${esc(meta.complexity.time)} time</span><span class="tag mono">${esc(meta.complexity.space)} space</span></div>
+  </header>
+
+  <div class="panel" data-controls></div>
+
+  <div class="grid">
+    <div class="panel stage">
+      <div data-stage></div>
+      <p class="note" data-note></p>
+      <div data-input></div>
+    </div>
+    <div class="panel" data-code></div>
+  </div>
+
+  <details class="panel statement">
+    <summary>Problem statement</summary>
+    ${marked.parse(pkg.statement)}
+    <h3>Examples</h3>${examples}
+    <h3>Constraints</h3>
+    <ul>${[...constraintLines(meta.input), ...meta.constraints_note].map(c => `<li>${marked.parseInline(c)}</li>`).join("")}</ul>
+    ${meta.source ? `<p class="source">Source: ${esc(meta.source)}</p>` : ""}
+  </details>
+</div>`;
+}
+
+export function renderPage(pkg: Package): string {
+  const { meta } = pkg;
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(meta.title)}</title>
+<meta name="description" content="${esc(meta.summary)}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+</head>
+<body>${renderBody(pkg)}
+<script type="module">import "virtual:algorithm-page/${meta.slug}";</script>
+</body>
+</html>
+`;
+}

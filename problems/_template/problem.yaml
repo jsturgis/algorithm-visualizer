@@ -1,0 +1,18 @@
+# TEMPLATE: copy this folder to problems/<slug>/ (the folder name is the page's URL), then edit every file.
+# Folders starting with "_" are verified by `npm run verify` but left off the site.
+title: Find the Maximum
+summary: Walk the array once, remembering the largest value seen so far.
+explanation: Walk the array once, remembering the largest value seen so far.   # page intro; Markdown allowed
+# source: LeetCode 0000
+tags: [Arrays]
+complexity: { time: O(n), space: O(1) }
+entry: findMax                       # the function every submission exports
+limits: { time_ms: 100 }             # accepted solutions must run each `large` test within this
+input:                               # the entry function's arguments, in order, with their constraints
+  - { name: nums, type: "int[]", length: [1, 100000], value: [-1000000, 1000000] }
+constraints_note: []                 # constraints that aren't ranges; enforce them in input_validators/validate.ts
+visualization:
+  default: { nums: [4, 9, 2, 11, 7] }
+  limits:                            # tighter limits for the page's custom input, so the picture fits
+    nums: { length: [1, 12] }
+  labels: { nums: Try your own array }

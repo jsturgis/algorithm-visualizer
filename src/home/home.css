@@ -1,0 +1,19 @@
+/* Home page: search, tag chips, algorithm cards. */
+.hero { padding-block: 28px 4px; }
+.hero h1 { font-size: clamp(32px, 5vw, 48px); }
+.find { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.find input[type=search] { font-family: var(--body); width: min(320px, 100%); background: var(--panel); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 5px 12px; border-radius: 999px; font-size: 13px; }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.count { font-size: 13px; color: var(--muted); margin: 0; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 16px; }
+.card { display: grid; gap: 8px; align-content: start; text-decoration: none; color: inherit;
+  transition: border-color .2s, transform .2s; }
+.card:hover { border-color: var(--curve); transform: translateY(-2px); }
+.card h2 { font: 700 20px/1.2 var(--display); margin: 0; }
+.card p { margin: 0; color: var(--muted); font-size: 14px; }
+.card .meta { margin-top: 4px; }
+.empty { color: var(--muted); }
+.keys { font-size: 13px; color: var(--muted); margin: 0; }
+kbd { font: 12px var(--mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--panel); }
