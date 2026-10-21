@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minimum Start Value</title>
+<meta name="description" content="Step through the O(n) prefix-sum solution to Minimum Value to Get Positive Step by Step Sum.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/css/base.css">
+<style>
+/* Running-sum chart */
+.chart-wrap { overflow-x: auto; }
+svg.chart { display: block; width: 100%; min-width: 360px; height: auto; font-family: var(--mono); }
+.chart .grid-l { stroke: var(--line); stroke-width: 1; }
+.chart .zero { stroke: var(--muted); stroke-width: 1.2; }
+.chart .tick { fill: var(--muted); font-size: 11px; }
+.chart .goal { stroke: var(--goal); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.chart .goal-t { fill: var(--goal); font-size: 11px; font-weight: 600; }
+.chart .seg { stroke: var(--curve); stroke-width: 2.5; stroke-linecap: round; transition: opacity .3s; }
+.chart .pt { fill: var(--panel); stroke: var(--curve); stroke-width: 2.5; transition: opacity .3s, fill .3s, stroke .3s; }
+.chart .pt.cur { fill: var(--cur); stroke: var(--cur); }
+.chart .pt.low { fill: var(--low); stroke: var(--low); }
+.chart .pt.lifted-low { fill: var(--goal); stroke: var(--goal); }
+.chart .val { fill: var(--fg); font-size: 12px; font-weight: 600; text-anchor: middle; transition: opacity .3s; }
+.chart .lift { transition: transform .9s cubic-bezier(.3,.7,.2,1); }
+.chart .minline { stroke: var(--low); stroke-width: 1.5; stroke-dasharray: 3 4; transition: transform .4s, opacity .3s; }
+.chart .min-t { fill: var(--low); font-size: 11px; font-weight: 600; transition: transform .4s, opacity .3s; }
+.chart .xlab { fill: var(--muted); font-size: 11px; text-anchor: middle; }
+.chart .arrow { stroke: var(--goal); stroke-width: 2; fill: none; transition: opacity .4s; }
+.chart .arrow-t { fill: var(--goal); font-size: 12px; font-weight: 600; transition: opacity .4s; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="topbar"><a class="brand" href="../../">Algorithms, step by step</a><a href="../../">← All algorithms</a></nav>
+
+  <header>
+    <h1>Minimum Start Value</h1>
+    <p>Add the numbers one at a time to <code>startValue</code>. The running total must never drop below 1. Track the running sum with <code>startValue = 0</code> and find its lowest point. Then pick the smallest <code>startValue</code> that lifts that lowest point up to 1.</p>
+    <div class="meta"><span class="tag">Arrays</span><span class="tag">Prefix sum</span><span class="tag mono">O(n) time</span><span class="tag mono">O(1) space</span></div>
+  </header>
+
+  <div class="panel" data-controls></div>
+
+  <div class="grid">
+    <div class="panel stage">
+      <div>
+        <p class="label">nums</p>
+        <div class="strip-scroll"><div class="strip" id="strip"></div></div>
+      </div>
+      <div>
+        <p class="label" id="chart-label">Running sum</p>
+        <div class="chart-wrap"><svg class="chart" id="chart" viewBox="0 0 640 320" role="img" aria-label="Running sum chart"></svg></div>
+      </div>
+      <p class="note" data-note></p>
+      <div data-input></div>
+    </div>
+    <div class="panel" data-code></div>
+  </div>
+</div>
+
+<script src="../../assets/js/player.js"></script>
+<script>
+const { svgEl: el, fmt, parseIntList } = AlgoPlayer;
+const $ = id => document.getElementById(id);
+let nums, sums, G;
+
+function buildTrace(input) {
+  const T = [];
+  let total = 0, minVal = 0, minIdx = 0;
+  const snap = (o, vars = {}) => T.push(Object.assign(
+    { minVal, minIdx, cursor: null, done: -1, lift: 0, ans: null }, o,
+    { vars: Object.assign({ num: null, total, minVal, startValue: null }, vars) }));
+
+  snap({ line: 2, shown: 1, note: "Start with <b>total = 0</b> and <b>minVal = 0</b>. Point 0 on the chart is the start, before any number is added." });
+  input.forEach((num, k) => {
+    snap({ line: 3, shown: k + 1, cursor: k, done: k - 1, note: `Read <b>num = ${num}</b> (index ${k}).` }, { num });
+    const before = total; total += num;
+    snap({ line: 4, shown: k + 2, cursor: k, done: k - 1, flash: "total",
+      note: `<b>total = ${before} + ${fmt(num)} = ${total}</b>` }, { num });
+    const prev = minVal;
+    if (total < minVal) { minVal = total; minIdx = k + 1; }
+    snap({ line: 5, shown: k + 2, cursor: k, done: k, flash: minVal !== prev ? "minVal" : null,
+      note: minVal !== prev
+        ? `<b>${total} < ${prev}</b>: a new lowest point. <b>minVal = ${minVal}</b>`
+        : `<b>${total} ≥ ${minVal}</b>: not a new low. minVal stays <b>${minVal}</b>.` }, { num });
+  });
+  const ans = 1 - minVal, n = input.length;
+  snap({ line: 7, shown: n + 1, done: n - 1, ans, flash: "startValue",
+    note: `The lowest running sum is <b>${minVal}</b>. To lift it to 1, start at <b>1 − ${fmt(minVal)} = ${ans}</b>.` }, { startValue: ans });
+  snap({ line: 7, shown: n + 1, done: n - 1, ans, lift: ans,
+    note: `Check: with <b>startValue = ${ans}</b> every running total is at least 1, and the lowest one is exactly 1. Starting at ${ans - 1} would put that point at 0, so ${ans} is the smallest valid start.` }, { startValue: ans });
+  return T;
+}
+
+function setup(input) {
+  nums = input;
+  $("strip").innerHTML = nums.map((v, k) =>
+    `<div class="cell"><div class="box" id="b${k}">${v}</div><span class="idx">${k}</span></div>`).join("");
+
+  const svg = $("chart");
+  svg.innerHTML = "";
+  const W = 640, H = 320, L = 46, R = 24, Tp = 26, B = 34;
+  const n = nums.length;
+  sums = [0];
+  nums.forEach(v => sums.push(sums[sums.length - 1] + v));
+  const minV = Math.min(...sums), maxV = Math.max(...sums);
+  const ans = 1 - Math.min(0, minV);
+  const lo = Math.min(minV, 0), hi = Math.max(maxV + ans, 1);
+  const span = Math.max(hi - lo, 1);
+  const pad = span * 0.08;
+  const y0 = lo - pad, y1 = hi + pad;
+  const xs = k => L + (n === 0 ? 0 : k * (W - L - R) / n);
+  const ys = v => Tp + (y1 - v) * (H - Tp - B) / (y1 - y0);
+
+  const rawStep = span / 6;
+  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const stepV = [1, 2, 5, 10].map(m => m * mag).find(s => s >= rawStep) || 10 * mag;
+  const tickStep = Math.max(1, Math.round(stepV));
+  for (let v = Math.ceil(y0 / tickStep) * tickStep; v <= y1; v += tickStep) {
+    el("line", { x1: L, x2: W - R, y1: ys(v), y2: ys(v), class: v === 0 ? "zero" : "grid-l" }, svg);
+    el("text", { x: L - 8, y: ys(v) + 4, "text-anchor": "end", class: "tick" }, svg, v);
+  }
+  for (let k = 0; k <= n; k++) el("text", { x: xs(k), y: H - 10, class: "xlab" }, svg, k === 0 ? "start" : k);
+
+  el("line", { x1: L, x2: W - R, y1: ys(1), y2: ys(1), class: "goal" }, svg);
+  el("text", { x: W - R, y: ys(1) - 6, "text-anchor": "end", class: "goal-t" }, svg, "must stay ≥ 1");
+
+  const minLine = el("line", { x1: L, x2: W - R, y1: ys(0), y2: ys(0), class: "minline" }, svg);
+  const minText = el("text", { x: L + 6, y: ys(0) + 14, class: "min-t" }, svg, "");
+  const arrow = el("path", { class: "arrow", d: "" }, svg);
+  const arrowT = el("text", { class: "arrow-t" }, svg, "");
+
+  const g = el("g", { class: "lift" }, svg);
+  const segs = [], pts = [], vals = [];
+  for (let k = 1; k <= n; k++) segs.push(el("line", { x1: xs(k - 1), y1: ys(sums[k - 1]), x2: xs(k), y2: ys(sums[k]), class: "seg" }, g));
+  for (let k = 0; k <= n; k++) {
+    pts.push(el("circle", { cx: xs(k), cy: ys(sums[k]), r: 6, class: "pt" }, g));
+    vals.push(el("text", { x: xs(k), y: ys(sums[k]) - 12, class: "val" }, g, sums[k]));
+  }
+  G = { g, segs, pts, vals, minLine, minText, arrow, arrowT, xs, ys };
+}
+
+function render(s) {
+  nums.forEach((_, k) => {
+    $("b" + k).className = "box" + (k === s.cursor ? " cursor" : k <= s.done ? " done" : "");
+  });
+
+  const lifted = s.lift > 0;
+  G.g.style.transform = `translateY(${G.ys(s.lift) - G.ys(0)}px)`;
+  G.segs.forEach((e, i) => e.style.opacity = i + 1 < s.shown ? 1 : 0);
+  G.pts.forEach((e, k) => {
+    e.style.opacity = k < s.shown ? 1 : 0;
+    let c = "pt";
+    if (lifted && k === s.minIdx) c += " lifted-low";
+    else if (k === s.minIdx && s.minVal < 0) c += " low";
+    if (!lifted && s.cursor !== null && k === s.cursor + 1) c += " cur";
+    e.setAttribute("class", c);
+  });
+  G.vals.forEach((e, k) => {
+    e.style.opacity = k < s.shown ? 1 : 0;
+    e.textContent = sums[k] + s.lift;
+  });
+
+  const showMin = !lifted && s.minVal < 0;
+  G.minLine.style.transform = G.minText.style.transform = `translateY(${G.ys(s.minVal) - G.ys(0)}px)`;
+  G.minLine.style.opacity = G.minText.style.opacity = showMin ? 1 : 0;
+  G.minText.textContent = `lowest = ${s.minVal}`;
+
+  if (s.ans !== null) {
+    const x = G.xs(s.minIdx) + 18, ya = G.ys(s.minVal), yb = G.ys(1);
+    G.arrow.setAttribute("d", `M${x} ${ya} L${x} ${yb + 6} M${x - 5} ${yb + 12} L${x} ${yb + 4} L${x + 5} ${yb + 12}`);
+    G.arrowT.setAttribute("x", x + 8);
+    G.arrowT.setAttribute("y", (ya + yb) / 2 + 4);
+    G.arrowT.textContent = `+${s.ans}`;
+    G.arrow.style.opacity = G.arrowT.style.opacity = lifted ? 0 : 1;
+  } else {
+    G.arrow.style.opacity = G.arrowT.style.opacity = 0;
+  }
+
+  $("chart-label").textContent = lifted ? `Running total with startValue = ${s.lift}` : "Running sum with startValue = 0";
+}
+
+AlgoPlayer.create({
+  source: [
+    "var minStartValue = function(nums) {",
+    "    let total = 0, minVal = 0;",
+    "    for (const num of nums) {",
+    "        total += num;",
+    "        minVal = Math.min(minVal, total);",
+    "    }",
+    "    return 1 - minVal;",
+    "};"
+  ],
+  codeNote: "The standard O(n) solution: one pass, tracking the lowest prefix sum.",
+  vars: [{ key: "num" }, { key: "total" }, { key: "minVal", tone: "low" }, { key: "startValue", tone: "goal" }],
+  inputs: [{ id: "arr", label: "Try your own array", value: "-3, 2, -3, 4, 2" }],
+  parse: v => parseIntList(v.arr, { min: 1, max: 12 }),
+  buildTrace, setup, render,
+});
+</script>
+</body>
+</html>

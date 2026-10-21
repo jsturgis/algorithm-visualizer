@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  TEMPLATE: copy this folder to algorithms/<your-slug>/, then:
+    1. Change the title, description, header text and tags.
+    2. Replace SOURCE, buildTrace, setup and render with your algorithm.
+    3. Add an entry to algorithms.js so it shows on the home page.
+  This working example finds the largest number in an array.
+-->
+<title>Find the Maximum</title>
+<meta name="description" content="Template algorithm page: scan an array for its largest value.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/css/base.css">
+<style>
+/* Page-specific styles go here. Use the colour tokens from base.css (var(--curve), var(--goal), ...). */
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="topbar"><a class="brand" href="../../">Algorithms, step by step</a><a href="../../">← All algorithms</a></nav>
+
+  <header>
+    <h1>Find the Maximum</h1>
+    <p>Walk the array once, remembering the largest value seen so far.</p>
+    <div class="meta"><span class="tag">Arrays</span><span class="tag mono">O(n) time</span><span class="tag mono">O(1) space</span></div>
+  </header>
+
+  <!-- The player fills the four data-* placeholders. Everything else in .stage is yours. -->
+  <div class="panel" data-controls></div>
+  <div class="grid">
+    <div class="panel stage">
+      <div>
+        <p class="label">nums</p>
+        <div class="strip-scroll"><div class="strip" id="strip"></div></div>
+      </div>
+      <p class="note" data-note></p>
+      <div data-input></div>
+    </div>
+    <div class="panel" data-code></div>
+  </div>
+</div>
+
+<script src="../../assets/js/player.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+let nums;
+
+// Run the algorithm once and record a snapshot for every step you want to show.
+// Each step needs `line` (1-based, highlighted in the code) and `note` (HTML).
+// `vars` fills the variable cards; `flash` highlights one of them.
+// Any other fields (here: cursor, best) are yours to use in render().
+function buildTrace(input) {
+  const T = [];
+  let best = input[0], bestIdx = 0;
+  const snap = o => T.push(Object.assign({ bestIdx, cursor: null }, o, { vars: { i: o.cursor, "nums[i]": o.cursor == null ? null : input[o.cursor], best } }));
+
+  snap({ line: 2, note: `Start with <b>best = nums[0] = ${best}</b>.` });
+  for (let i = 1; i < input.length; i++) {
+    snap({ line: 3, cursor: i, note: `Look at <b>nums[${i}] = ${input[i]}</b>.` });
+    if (input[i] > best) {
+      best = input[i]; bestIdx = i;
+      snap({ line: 4, cursor: i, flash: "best", note: `<b>${input[i]} is bigger</b>, so <b>best = ${best}</b>.` });
+    } else {
+      snap({ line: 4, cursor: i, note: `<b>${input[i]} ≤ ${best}</b>: best stays <b>${best}</b>.` });
+    }
+  }
+  snap({ line: 6, flash: "best", note: `Every number checked. The maximum is <b>${best}</b>.` });
+  return T;
+}
+
+// Build the visual for a fresh input (called on load and whenever the user clicks Run).
+function setup(input) {
+  nums = input;
+  $("strip").innerHTML = nums.map((v, k) =>
+    `<div class="cell"><div class="box" id="b${k}">${v}</div><span class="idx">${k}</span></div>`).join("");
+}
+
+// Update the visual for one step.
+function render(s) {
+  nums.forEach((_, k) => {
+    $("b" + k).className = "box" + (k === s.cursor ? " cursor" : k === s.bestIdx ? " found" : "");
+  });
+}
+
+AlgoPlayer.create({
+  source: [
+    "function findMax(nums) {",
+    "    let best = nums[0];",
+    "    for (let i = 1; i < nums.length; i++) {",
+    "        if (nums[i] > best) best = nums[i];",
+    "    }",
+    "    return best;",
+    "}"
+  ],
+  vars: [{ key: "i" }, { key: "nums[i]" }, { key: "best", tone: "goal" }],
+  inputs: [{ id: "arr", label: "Try your own array", value: "4, 9, 2, 11, 7" }],
+  parse: v => AlgoPlayer.parseIntList(v.arr, { min: 1, max: 12 }),
+  buildTrace, setup, render,
+});
+</script>
+</body>
+</html>
