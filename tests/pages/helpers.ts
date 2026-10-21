@@ -5,6 +5,7 @@ import { renderBody } from "../../build/render.ts";
 import { loadTsLibs } from "../../build/ts-libs.ts";
 import { createChecker } from "../../src/editor/checker.ts";
 import { inProcess, type CheckerFactory } from "../../src/editor/transport.ts";
+import { inProcessRunner } from "../../src/judge/runner.ts";
 import { mountAlgorithm, type MountedPage, type MountOptions } from "../../src/runtime/page.ts";
 import type { AlgorithmModule } from "../../src/runtime/types.ts";
 
@@ -92,6 +93,6 @@ let current: Page | null = null;
 export function mountPage(mod: AlgorithmModule, opts: MountOptions = {}): Page {
   current?.player.destroy();
   document.body.innerHTML = renderBody(loadPackage(path.join(PROBLEMS, mod.meta.slug)));
-  current = new Page(mountAlgorithm(mod, document, { checker: inProcessChecker, storage: new MemoryStorage(), debounceMs: 5, ...opts }));
+  current = new Page(mountAlgorithm(mod, document, { checker: inProcessChecker, runner: inProcessRunner, storage: new MemoryStorage(), debounceMs: 5, ...opts }));
   return current;
 }

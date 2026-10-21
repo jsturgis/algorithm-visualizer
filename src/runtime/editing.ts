@@ -1,11 +1,15 @@
 // Edit mode for the code panel: the Edit / Show reference toggle, Reset, saved edits, the problem list,
-// and switching off line highlighting while the learner's code differs from the reference.
+// switching off line highlighting while the learner's code differs from the reference, and Run tests.
 //
 // This module is small and loaded with every page. The editor (CodeMirror) and the type checker
-// (TypeScript in a worker) are loaded the first time the learner clicks Edit.
+// (TypeScript in a worker) are loaded the first time the learner clicks Edit; the judge and the
+// package's test set the first time they click Run tests.
 import type { Diagnostic } from "../editor/checker.ts";
 import type { Editor, createEditor as CreateEditor } from "../editor/editor.ts";
 import type { AsyncChecker, CheckerFactory } from "../editor/transport.ts";
+import type { JudgeTest, Verdict } from "../judge/judge.ts";
+import type * as Panel from "../judge/panel.ts";
+import type { Runner } from "../judge/runner.ts";
 import { esc } from "./player.ts";
 import { signatureOf, type Contract } from "./types.ts";
 
@@ -24,6 +28,14 @@ export interface EditingOptions {
   /** Overrides the checker the editor module would create (tests inject an in-process one). */
   checker?: CheckerFactory;
   debounceMs?: number;
+  /** The package's test set for the judge. */
+  loadTestSet?: () => Promise<{ tests: JudgeTest[] }>;
+  /** Per-test time limit for the judge, already adjusted for the browser. */
+  timeLimitMs?: number;
+  /** Overrides the judge's Web Worker runner (tests inject an in-process one). */
+  runner?: () => Runner;
+  /** Loads the judge module. Tests may replace it; the page loads it lazily. */
+  loadJudge?: () => Promise<typeof Panel>;
 }
 
 export interface Editing {
@@ -32,6 +44,8 @@ export interface Editing {
   /** Resolves when Edit has finished opening (for tests). */
   ready(): Promise<void>;
   editor(): Editor | null;
+  /** Resolves with the verdict of the run in progress, or the last one (for tests). */
+  lastRun(): Promise<Verdict | null>;
   destroy(): void;
 }
 
@@ -69,9 +83,11 @@ export function attachEditing(o: EditingOptions): Editing {
   const actions = panel.querySelector<HTMLElement>("[data-code-actions]")!;
   actions.innerHTML = `
     <button type="button" data-edit="toggle" aria-pressed="false">Edit</button>
+    <button type="button" data-edit="run" hidden>Run tests</button>
     <button type="button" data-edit="reset" hidden>Reset</button>`;
   const toggleBtn = actions.querySelector<HTMLButtonElement>('[data-edit="toggle"]')!;
   const resetBtn = actions.querySelector<HTMLButtonElement>('[data-edit="reset"]')!;
+  const runBtn = actions.querySelector<HTMLButtonElement>('[data-edit="run"]')!;
   const listing = panel.querySelector<HTMLElement>("pre.code")!;
 
   const area = doc.createElement("div");
@@ -86,10 +102,13 @@ export function attachEditing(o: EditingOptions): Editing {
     <p class="edit-status" data-edit="status"></p>
     <div class="editor" data-edit="editor"></div>
     <p class="label problems-label">Problems</p>
-    <ul class="problems" data-edit="problems" aria-live="polite"></ul>`;
+    <ul class="problems" data-edit="problems" aria-live="polite"></ul>
+    <p class="run-hint" data-edit="run-hint" hidden></p>
+    <div class="verdict" data-edit="verdict" aria-live="polite" hidden></div>`;
   listing.after(area);
   const $ = (name: string) => area.querySelector<HTMLElement>(`[data-edit="${name}"]`)!;
   const confirmBox = $("confirm"), statusEl = $("status"), editorBox = $("editor"), problemsEl = $("problems");
+  const runHint = $("run-hint"), verdictEl = $("verdict");
 
   let editor: Editor | null = null;
   let checker: AsyncChecker | null = null;
@@ -121,7 +140,78 @@ export function attachEditing(o: EditingOptions): Editing {
     showStatus();
   }
 
+  // Run tests: blocked until the code has been checked, and while it has syntax or contract problems.
+  let diagnostics: Diagnostic[] | null = null;
+  let running: AbortController | null = null;
+  let run: Promise<Verdict | null> = Promise.resolve(null);
+  let ranText: string | null = null;
+
+  function syncRun() {
+    runBtn.hidden = !editing || !o.loadTestSet;
+    const blocking = diagnostics?.filter(d => d.category !== "type").length ?? 0;
+    runBtn.disabled = !!running || !editor || diagnostics === null || blocking > 0;
+    runHint.hidden = runBtn.hidden || !!running || !editor || (diagnostics !== null && blocking === 0);
+    runHint.textContent = diagnostics === null
+      ? "Run tests is available once your code has been checked."
+      : `Fix the ${blocking === 1 ? "syntax or contract problem" : `${blocking} syntax or contract problems`} above to run the tests.`;
+    runBtn.title = runBtn.disabled ? runHint.textContent : "Run your code against this problem's tests";
+    // A verdict describes the code it ran; mark it once the code changes.
+    const stale = !running && ranText !== null && !!editor && normalize(editor.getText()) !== ranText;
+    verdictEl.classList.toggle("stale", stale);
+    let note = verdictEl.querySelector(".stale-note");
+    if (stale && !note) {
+      note = doc.createElement("p");
+      note.className = "stale-note";
+      note.textContent = "Your code has changed since this run.";
+      verdictEl.prepend(note);
+    } else if (!stale) note?.remove();
+  }
+
+  async function runTests() {
+    if (!editor || !checker || running || !o.loadTestSet) return null;
+    const source = editor.getText();
+    const controller = new AbortController();
+    running = controller;
+    ranText = null;
+    // Clear the previous verdict straight away; the judge may still be downloading.
+    verdictEl.hidden = false;
+    verdictEl.className = "verdict running";
+    delete verdictEl.dataset.verdict;
+    verdictEl.textContent = "Loading the tests…";
+    syncRun();
+    let panel: typeof Panel | null = null;
+    try {
+      panel = await (o.loadJudge ?? (() => import("../judge/panel.ts")))();
+      const cancel = () => controller.abort();
+      panel.renderProgress(verdictEl, null, cancel);
+      const { tests } = await o.loadTestSet();
+      const runner = (o.runner ?? panel.browserRunner)();
+      controller.signal.addEventListener("abort", () => runner.dispose());
+      const verdict = await panel.judge({
+        source, contract: o.contract, tests, checker, runner,
+        timeLimitMs: o.timeLimitMs ?? 1000,
+        signal: controller.signal,
+        onProgress: p => panel!.renderProgress(verdictEl, p, cancel),
+      });
+      runner.dispose();
+      panel.renderVerdict(verdictEl, verdict, o.contract);
+      ranText = normalize(source);
+      return verdict;
+    } catch (e) {
+      verdictEl.hidden = false;
+      verdictEl.className = "verdict rte";
+      verdictEl.textContent = `The tests couldn't run: ${(e as Error).message}`;
+      return null;
+    } finally {
+      running = null;
+      syncRun();
+    }
+  }
+  runBtn.onclick = () => { run = runTests(); };
+
   function showProblems(list: Diagnostic[]) {
+    diagnostics = list;
+    syncRun();
     problemsEl.innerHTML = list.length
       ? list.map((d, i) => `<li class="${d.severity}"><button type="button" data-i="${i}">` +
           `<span class="where">Line ${d.line}:${d.column}</span> <span class="kind">${d.category}</span> ${esc(d.message)}</button></li>`).join("")
@@ -145,12 +235,15 @@ export function attachEditing(o: EditingOptions): Editing {
         onChange: text => {
           clearTimeout(saveTimer);
           if (canSave) saveTimer = setTimeout(() => save(text), 400);
+          diagnostics = null;   // until the checker reports on the new text
           syncHighlight();
+          syncRun();
         },
         onDiagnostics: showProblems,
       });
       problemsEl.innerHTML = `<li class="none">Checking…</li>`;
       syncHighlight();
+      syncRun();
     } catch (e) {
       loadError = `The editor couldn't start: ${(e as Error).message}`;
       showStatus();
@@ -167,6 +260,7 @@ export function attachEditing(o: EditingOptions): Editing {
     toggleBtn.title = on ? "Show the reference solution; your edits are kept" : `Edit the solution. It must stay ${signatureOf(o.contract)}.`;
     if (on && !opening) opening = open().catch(() => {});
     syncHighlight();
+    syncRun();
   }
 
   toggleBtn.onclick = () => setEditing(!editing);
@@ -185,7 +279,9 @@ export function attachEditing(o: EditingOptions): Editing {
     setLine(n) { line = n; if (editor) syncHighlight(); },
     ready: async () => { await opening; },
     editor: () => editor,
+    lastRun: () => run,
     destroy() {
+      running?.abort();
       clearTimeout(saveTimer);
       editor?.destroy();
       checker?.dispose();

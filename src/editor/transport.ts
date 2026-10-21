@@ -7,6 +7,7 @@ export interface AsyncChecker {
   diagnostics(source: string): Promise<Diagnostic[]>;
   completions(source: string, offset: number): Promise<Completions | null>;
   hover(source: string, offset: number): Promise<HoverInfo | null>;
+  transpile(source: string): Promise<string>;
   dispose(): void;
 }
 
@@ -18,13 +19,14 @@ export function inProcess(checker: Checker): AsyncChecker {
     diagnostics: async s => checker.diagnostics(s),
     completions: async (s, o) => checker.completions(s, o),
     hover: async (s, o) => checker.hover(s, o),
+    transpile: async s => checker.transpile(s),
     dispose: () => {},
   };
 }
 
 export type Request =
   | { id: number; op: "init"; contract: Contract }
-  | { id: number; op: "diagnostics"; source: string }
+  | { id: number; op: "diagnostics" | "transpile"; source: string }
   | { id: number; op: "completions" | "hover"; source: string; offset: number };
 export type Response = { id: number; result?: unknown; error?: string };
 type Call = Request extends infer R ? (R extends unknown ? Omit<R, "id"> : never) : never;
@@ -54,6 +56,7 @@ export function overWorker(worker: Worker): (contract: Contract) => Promise<Asyn
       diagnostics: source => call({ op: "diagnostics", source }),
       completions: (source, offset) => call({ op: "completions", source, offset }),
       hover: (source, offset) => call({ op: "hover", source, offset }),
+      transpile: source => call({ op: "transpile", source }),
       dispose: () => worker.terminate(),
     };
   };

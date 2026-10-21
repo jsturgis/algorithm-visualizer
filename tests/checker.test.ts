@@ -80,9 +80,14 @@ describe("diagnostics", () => {
     expect(checker.diagnostics("const getAverages = (nums: number[], k: number): number[] => nums.map(n => n + k);")).toEqual([]);
   });
 
-  test("non-erasable TypeScript like enum is rejected, as in the repo", () => {
+  test("non-erasable TypeScript like enum is rejected as syntax, as in the repo", () => {
     const src = reference + "\nenum E { A }";
-    expect(checker.diagnostics(src)).toEqual([expect.objectContaining({ category: "type", line: lineOf(src, "enum") })]);
+    expect(checker.diagnostics(src)).toEqual([expect.objectContaining({ category: "syntax", line: lineOf(src, "enum") })]);
+  });
+
+  test("grammar errors found while type checking are labelled syntax", () => {
+    const src = reference.replace("return avgs; // ", "return avgs; // ").replace(/return avgs;\n}$/, "if (n) const s = 1;\n    return avgs;\n}");
+    expect(checker.diagnostics(src)).toEqual([expect.objectContaining({ category: "syntax", line: lineOf(src, "if (n) const") })]);
   });
 
   test("there is no DOM, and no hint to change compiler options", () => {

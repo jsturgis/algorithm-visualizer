@@ -14,6 +14,10 @@ export interface Param {
 
 export type Input = Record<string, unknown>;
 
+/** The judge's per-test limit in the browser is problem.yaml's limits.time_ms × this. Browsers are slower than
+ * the machine the limit is set on (like ICPC's time multiplier). */
+export const BROWSER_TIME_MULTIPLIER = 3;
+
 /** The TypeScript type for a problem.yaml type. */
 export const tsType = (t: ParamType) => (t === "int" ? "number" : "number[]");
 
@@ -96,6 +100,8 @@ export interface ProblemMeta {
 
 /** Everything a page needs for one algorithm, as produced by the build. */
 export interface AlgorithmModule {
+  /** The judge's test set; loaded the first time the learner clicks Run tests. */
+  loadTestSet(): Promise<{ slug: string; tests: import("../judge/judge.ts").JudgeTest[] }>;
   meta: ProblemMeta;
   code: Code;
   buildTrace(input: any): Step[];
