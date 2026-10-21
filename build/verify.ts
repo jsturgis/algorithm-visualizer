@@ -6,9 +6,13 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import fc from "fast-check";
+import { createChecker } from "../src/editor/checker.ts";
 import { checkInput, withLimits } from "../src/runtime/constraints.ts";
-import type { Input, Step } from "../src/runtime/types.ts";
+import { contractOf, signatureOf, type Input, type Step } from "../src/runtime/types.ts";
 import { ROOT, type Package, type TestCase } from "./package.ts";
+import { loadTsLibs } from "./ts-libs.ts";
+
+let tsLibs: Record<string, string> | undefined;
 
 export const SEED = 20261021;
 export const RANDOM_TESTS = 200;
@@ -82,6 +86,14 @@ export async function verifyPackage(pkg: Package): Promise<Check[]> {
 
   // Reference answers: the samples' .ans files, otherwise the displayed solution's output.
   const answers = new Map<string, unknown>();
+
+  await check("accepted solution type-checks against the problem contract", () => {
+    // Exactly what the page's editor opens with, checked by the same checker the editor uses.
+    const contract = contractOf(meta);
+    const found = createChecker(contract, (tsLibs ??= loadTsLibs())).diagnostics(pkg.code.lines.join("\n"));
+    if (found.length) throw new Error(found.map(d => `line ${d.line}:${d.column} ${d.category}: ${d.message}`).join("\n"));
+    return signatureOf(contract);
+  });
 
   await check("input validator accepts every test input", () => {
     const large = Object.entries(suite.gen.large ?? {}).map(([name, make]) => ({ name: `large/${name}`, input: make() }));

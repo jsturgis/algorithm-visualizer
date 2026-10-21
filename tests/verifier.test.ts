@@ -82,6 +82,16 @@ describe("verifier", () => {
     expect(failed).toEqual(["trace highlights real lines and ends with the solution's answer"]);
   });
 
+  test("catches a problem.yaml return type that the accepted solution doesn't match", async () => {
+    const failed = await failures(dir => replaceIn(path.join(dir, "problem.yaml"), 'returns: "int"', 'returns: "int[]"'));
+    expect(failed).toEqual(["accepted solution type-checks against the problem contract"]);
+  });
+
+  test("catches an accepted solution with a type error", async () => {
+    const failed = await failures(dir => replaceIn(path.join(dir, "submissions/accepted/solution.ts"), "let best = nums[0];", 'let best = nums[0]; const label: string = best;'));
+    expect(failed).toEqual(["accepted solution type-checks against the problem contract"]);
+  });
+
   test("rejects a problem.yaml that doesn't match the schema", async () => {
     await expect(failures(dir => replaceIn(path.join(dir, "problem.yaml"), "type: \"int[]\"", "type: float"))).rejects.toThrow(/input\.0\.type/);
   });

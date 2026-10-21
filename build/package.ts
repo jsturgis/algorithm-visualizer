@@ -39,6 +39,7 @@ const MetaSchema = z.strictObject({
   entry: z.string().regex(/^[A-Za-z_]\w*$/),
   limits: z.strictObject({ time_ms: z.number().positive() }).default({ time_ms: 1000 }),
   input: z.array(Param).min(1),
+  returns: z.enum(["int", "int[]"]),
   constraints_note: z.array(z.string()).default([]),
   visualization: z.strictObject({
     default: z.record(z.string(), z.unknown()),

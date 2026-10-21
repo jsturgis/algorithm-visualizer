@@ -11,3 +11,7 @@ declare module "virtual:all-algorithms" {
   const mods: Record<string, import("./runtime/types.ts").AlgorithmModule>;
   export default mods;
 }
+declare module "virtual:ts-libs" {
+  const libs: Record<string, string>;
+  export default libs;
+}

@@ -1,0 +1,23 @@
+/* The code editor. Colours come from the site's tokens, so it follows light and dark themes. */
+.editor .cm-editor { background: var(--code-bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; font: 13px/1.7 var(--mono); }
+.editor .cm-editor.cm-focused { outline: 2px solid var(--curve); outline-offset: 2px; }
+.editor .cm-scroller { font: inherit; min-height: 180px; max-height: 70vh; }
+.editor .cm-content { caret-color: var(--fg); padding-block: 10px; }
+.editor .cm-cursor { border-left-color: var(--fg); }
+.editor .cm-gutters { background: var(--code-bg); color: var(--muted); border-right: none; border-radius: 8px 0 0 8px; }
+.editor .cm-lineNumbers .cm-gutterElement { opacity: .6; padding-inline: 8px 4px; }
+.editor .cm-selectionBackground, .editor .cm-focused .cm-selectionBackground { background: var(--curve-soft) !important; }
+.editor .cm-matchingBracket { background: var(--hl); outline: 1px solid var(--line); }
+.editor .cm-step-line { background: var(--hl); box-shadow: inset 3px 0 0 var(--fg); }
+.editor .cm-lintRange-error { background-image: none; text-decoration: wavy underline var(--low); text-underline-offset: 3px; }
+.editor .cm-lintRange-warning { background-image: none; text-decoration: wavy underline var(--cur); text-underline-offset: 3px; }
+
+/* Tooltips (autocomplete, hover, lint) are rendered inside the editor's DOM */
+.editor .cm-tooltip { background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; font: 13px var(--mono); box-shadow: 0 6px 18px rgb(0 0 0 / .12); max-width: min(480px, 90vw); }
+.editor .cm-tooltip-autocomplete ul li[aria-selected] { background: var(--curve); color: var(--panel); }
+.editor .cm-completionIcon { opacity: .7; }
+.editor .cm-type-hover { padding: 6px 10px; }
+.editor .cm-type-hover p { margin: 6px 0 0; font-family: var(--body); color: var(--muted); }
+.editor .cm-diagnostic { padding: 6px 10px; border-left-width: 4px; white-space: pre-wrap; }
+.editor .cm-diagnostic-error { border-left-color: var(--low); }
+.editor .cm-diagnostic-warning { border-left-color: var(--cur); }

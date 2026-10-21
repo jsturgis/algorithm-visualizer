@@ -7,7 +7,8 @@ Each algorithm is a **problem package** modelled on the [ICPC problem package fo
 ```
 problems/<slug>/             one problem package per algorithm (the canonical source)
 problems/_template/          a complete, working package to copy (verified, not published)
-src/runtime/                 browser runtime: step player, page wiring, input constraints
+src/runtime/                 browser runtime: step player, page wiring, input constraints, edit mode
+src/editor/                  code editor (CodeMirror) and TypeScript checker, loaded on first Edit
 src/home/                    home page
 src/styles/base.css          shared colours, layout and components
 site/index.html              home page shell (algorithm pages are generated into site/algorithms/)
@@ -21,7 +22,7 @@ tests/                       Vitest: package checks, verifier self-tests, pages,
 ```
 problems/k-radius-averages/
   problem.yaml                          title, tags, complexity, entry function, input constraints,
-                                        time limit, visualization settings
+                                        return type, time limit, visualization settings
   problem_statement/statement.md
   data/sample/1.in, 1.ans               examples, as JSON: the input object / the expected answer
   data/invalid_input/*.in               inputs the validator must reject
@@ -51,11 +52,18 @@ For every package, including the template:
 | Property test: solution = brute force on 1,000 fast-check inputs (counterexamples are shrunk) | rarer bugs, reported as a minimal failing input |
 | Accepted submissions run every `large` test within `limits.time_ms` | a solution with the wrong complexity |
 | Each `wrong_answer` submission fails at least one test | tests too weak to catch known mistakes |
+| The accepted solution, as displayed, type-checks against the contract (`entry`, input types, `returns`) | a `problem.yaml` that disagrees with its solution |
 | The trace only uses real `@line` labels, every step has a note, and the last step's `result` equals the solution's answer on every test that fits the page | a visualization that drifts from the solution |
 
 `time_limit_exceeded` submissions are only run on the small tests. The verifier doesn't confirm that they actually exceed the time limit.
 
 `npm run verify` also writes the generated tests to `data/secret/` (gitignored) so you can review them like a checked-in package.
+
+## Editing code on a page
+
+The code panel's **Edit** button opens the accepted solution in an editor (CodeMirror 6) with TypeScript diagnostics, autocomplete and hover types. The code is checked against the problem's contract: the entry function must keep its name, accept the `input` types from `problem.yaml` (`int` → `number`, `int[]` → `number[]`) and return its `returns` type. Edits are saved per algorithm in the browser. The animation always follows the reference solution, so line highlighting is turned off while the edited code differs from it. Edited code is not run.
+
+The checker runs in a Web Worker using **TypeScript 6.0.3** (`typescript-js` in `package.json`), the last JavaScript-hosted release. The repo's own TypeScript 7 is a native binary with no browser build, so the two can disagree on newer language features. The editor and checker load only when someone first clicks Edit: about 160 KB and 1 MB gzipped.
 
 ## Commands
 

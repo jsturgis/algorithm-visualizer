@@ -14,6 +14,7 @@ limits: { time_ms: 500 }
 input:
   - { name: nums, type: "int[]", length: [1, 100000], value: [0, 100000] }
   - { name: k, type: int, value: [0, 100000] }
+returns: "int[]"
 visualization:
   default: { nums: [7, 4, 3, 9, 1, 8, 5, 2, 6], k: 3 }
   limits:
