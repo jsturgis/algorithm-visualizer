@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K Radius Subarray Averages</title>
+<meta name="description" content="Step through the sliding-window solution to K Radius Subarray Averages.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/css/base.css">
+<style>
+/* Two aligned rows: nums (with the window) on top, avgs underneath */
+.rows { display: grid; gap: 6px; width: max-content; margin-inline: auto; }
+.row-label { font: 600 11px/1 var(--body); letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 6px 0 2px; }
+.box.leaving { background: var(--low-soft); border-color: var(--low); color: var(--low); transform: translateY(5px); }
+.box.unset { color: var(--muted); border-style: dashed; }
+.ptrs { display: grid; gap: 2px; justify-items: center; align-content: start; min-height: 40px; font: 600 11px var(--mono); }
+.ptr { padding: 1px 6px; border-radius: 4px; }
+.ptr.center { color: var(--goal); background: var(--goal-soft); }
+.ptr.in { color: var(--cur); background: var(--cur-soft); }
+.ptr.out { color: var(--low); background: var(--low-soft); }
+.sum { font: 14px var(--mono); text-align: center; margin: 10px 0 0; overflow-wrap: anywhere; }
+.sum .minus { color: var(--low); } .sum .plus { color: var(--cur); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; font-size: 12px; color: var(--muted); margin: 0; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 2px solid; vertical-align: -2px; margin-right: 5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="topbar"><a class="brand" href="../../">Algorithms, step by step</a><a href="../../">← All algorithms</a></nav>
+
+  <header>
+    <h1>K Radius Subarray Averages</h1>
+    <p>For each index <code>i</code>, average the <code>2k + 1</code> numbers from <code>i − k</code> to <code>i + k</code> (integer division), or write <code>-1</code> if that range runs off either end. Re-adding every window from scratch costs <code>O(n·k)</code>. Instead, keep one window sum and slide it right: add the number that enters, subtract the number that leaves.</p>
+    <div class="meta"><span class="tag">Arrays</span><span class="tag">Sliding window</span><span class="tag mono">O(n) time</span><span class="tag mono">O(1) extra space</span></div>
+  </header>
+
+  <div class="panel" data-controls></div>
+
+  <div class="grid">
+    <div class="panel stage">
+      <div>
+        <p class="legend">
+          <span><i style="border-color:var(--curve);background:var(--curve-soft)"></i>in the window</span>
+          <span><i style="border-color:var(--cur);background:var(--cur-soft)"></i>entering</span>
+          <span><i style="border-color:var(--low);background:var(--low-soft)"></i>leaving</span>
+          <span><i style="border-color:var(--goal);background:var(--goal-soft)"></i>average written</span>
+        </p>
+        <div class="strip-scroll">
+          <div class="rows">
+            <p class="row-label">nums</p>
+            <div class="strip" id="nums"></div>
+            <p class="row-label">avgs</p>
+            <div class="strip" id="avgs"></div>
+          </div>
+        </div>
+        <p class="sum" id="sum"></p>
+      </div>
+      <p class="note" data-note></p>
+      <div data-input></div>
+    </div>
+    <div class="panel" data-code></div>
+  </div>
+</div>
+
+<script src="../../assets/js/player.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+let nums;
+
+function buildTrace({ nums, k }) {
+  const T = [];
+  const n = nums.length, size = 2 * k + 1;
+  const avgs = new Array(n).fill(null);   // null = still -1 and not yet decided
+  let sum = null, i = null, center = null, avg = null;
+  const snap = o => T.push(Object.assign(
+    { win: null, enter: null, leave: null, center: null, wrote: null, sumText: "" }, o,
+    { avgs: avgs.slice(), vars: { k, size, i, sum, center, avg } }));
+
+  snap({ line: 2, note: `Each window holds <b>size = 2·${k} + 1 = ${size}</b> numbers: the center plus ${k} on each side.` });
+  avgs.fill(-1);
+  if (size > n) {
+    snap({ line: 3, note: `Start every answer at <b>-1</b>.` });
+    snap({ line: 4, note: `<b>${size} > ${n}</b>: no window fits in the array, so every answer stays <b>-1</b>.` });
+    return T;
+  }
+  snap({ line: 3, note: `Start every answer at <b>-1</b>. The first ${k} and last ${k} indices will keep it, because their window would run off the end.` });
+  sum = 0;
+  snap({ line: 5, flash: "sum", note: `<b>sum = 0</b>. Build the first window, indices 0 to ${size - 1}.` });
+  for (i = 0; i < size; i++) {
+    sum += nums[i];
+    snap({ line: 6, win: [0, i], enter: i, flash: "sum",
+      sumText: nums.slice(0, i + 1).join(" + ") + ` = ${sum}`,
+      note: `Add <b>nums[${i}] = ${nums[i]}</b>. <b>sum = ${sum}</b>` });
+  }
+  i = null; center = k; avg = Math.floor(sum / size);
+  avgs[center] = avg;
+  snap({ line: 7, win: [0, size - 1], center, wrote: center, flash: "avg",
+    sumText: `${sum} / ${size} = ${(sum / size).toFixed(2).replace(/\.?0+$/, "")} → ${avg}`,
+    note: `The first full window is centered at index <b>${k}</b>. <b>avgs[${k}] = ⌊${sum} / ${size}⌋ = ${avg}</b>` });
+
+  for (i = size; i < n; i++) {
+    const out = i - size, before = sum;
+    sum += nums[i] - nums[out];
+    center = out + k + 1; avg = null;
+    snap({ line: 9, win: [out + 1, i], enter: i, leave: out, center, flash: "sum",
+      sumText: `${before} <span class="plus">+ ${nums[i]}</span> <span class="minus">− ${nums[out]}</span> = ${sum}`,
+      note: `Slide right. <b>nums[${i}] = ${nums[i]}</b> enters and <b>nums[${out}] = ${nums[out]}</b> leaves: <b>sum = ${before} + ${nums[i]} − ${nums[out]} = ${sum}</b>. The ${size - 1} numbers in between are already counted.` });
+    avg = Math.floor(sum / size);
+    avgs[center] = avg;
+    snap({ line: 10, win: [out + 1, i], center, wrote: center, flash: "avg",
+      sumText: `${sum} / ${size} = ${(sum / size).toFixed(2).replace(/\.?0+$/, "")} → ${avg}`,
+      note: `The window is now centered at <b>i − size + k + 1 = ${center}</b>. <b>avgs[${center}] = ⌊${sum} / ${size}⌋ = ${avg}</b>` });
+  }
+  i = null; center = null; avg = null;
+  snap({ line: 12, note: `Done. Every center with ${k} numbers on both sides has its average; the rest stay <b>-1</b>. Each number was added once and removed at most once, so this is <b>O(n)</b>.` });
+  return T;
+}
+
+function setup(input) {
+  nums = input.nums;
+  const cell = (id, k, v, idx) => `<div class="cell"><div class="box" id="${id}${k}">${v}</div>${idx ? `<span class="idx">${k}</span><div class="ptrs" id="p${k}"></div>` : ""}</div>`;
+  $("nums").innerHTML = nums.map((v, k) => cell("n", k, v, true)).join("");
+  $("avgs").innerHTML = nums.map((_, k) => cell("a", k, "", false)).join("");
+}
+
+function render(s) {
+  nums.forEach((_, k) => {
+    const inWin = s.win && k >= s.win[0] && k <= s.win[1];
+    $("n" + k).className = "box" + (k === s.leave ? " leaving" : k === s.enter ? " cursor" : inWin ? " done" : "");
+    $("p" + k).innerHTML = [["center", s.center], ["in", s.enter], ["out", s.leave]]
+      .filter(([, j]) => j === k).map(([name]) => `<span class="ptr ${name}">${name}</span>`).join("");
+    const a = s.avgs[k], box = $("a" + k);
+    box.textContent = a == null ? "" : a;
+    box.className = "box" + (k === s.wrote ? " found" : a == null ? " unset" : a === -1 ? "" : " done");
+  });
+  $("sum").innerHTML = s.sumText;
+}
+
+AlgoPlayer.create({
+  source: [
+    "var getAverages = function(nums, k) {",
+    "    const n = nums.length, size = 2 * k + 1;",
+    "    const avgs = new Array(n).fill(-1);",
+    "    if (size > n) return avgs;",
+    "    let sum = 0;",
+    "    for (let i = 0; i < size; i++) sum += nums[i];",
+    "    avgs[k] = Math.floor(sum / size);",
+    "    for (let i = size; i < n; i++) {",
+    "        sum += nums[i] - nums[i - size];",
+    "        avgs[i - size + k + 1] = Math.floor(sum / size);",
+    "    }",
+    "    return avgs;",
+    "};"
+  ],
+  codeNote: "Sliding window. <code>Math.floor</code> matches truncation here because every number is non-negative.",
+  vars: [{ key: "k" }, { key: "size" }, { key: "i" }, { key: "sum", tone: "curve" }, { key: "center" }, { key: "avg", tone: "goal" }],
+  inputs: [
+    { id: "arr", label: "nums", value: "7, 4, 3, 9, 1, 8, 5, 2, 6" },
+    { id: "k", label: "k", value: "3", short: true },
+  ],
+  parse: v => {
+    const nums = AlgoPlayer.parseIntList(v.arr, { min: 1, max: 14 });
+    if (nums.some(x => x < 0)) throw new Error("Numbers can't be negative.");
+    const k = Number(v.k);
+    if (!Number.isInteger(k) || k < 0 || k > 9) throw new Error("k must be a whole number from 0 to 9.");
+    return { nums, k };
+  },
+  buildTrace, setup, render,
+});
+</script>
+</body>
+</html>
