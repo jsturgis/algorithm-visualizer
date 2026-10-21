@@ -3,9 +3,9 @@ import "../styles/base.css";
 import { checkInput, formatField, parseField, withLimits } from "./constraints.ts";
 import { attachEditing, type Editing, type EditingOptions } from "./editing.ts";
 import { createPlayer, type Player } from "./player.ts";
-import { contractOf, type AlgorithmModule, type Input } from "./types.ts";
+import { BROWSER_TIME_MULTIPLIER, contractOf, type AlgorithmModule, type Input } from "./types.ts";
 
-export type MountOptions = Pick<EditingOptions, "storage" | "loadEditor" | "checker" | "debounceMs">;
+export type MountOptions = Pick<EditingOptions, "storage" | "loadEditor" | "checker" | "debounceMs" | "runner" | "loadJudge">;
 export type MountedPage = Player & { editing: Editing };
 
 export function mountAlgorithm(mod: AlgorithmModule, doc: Document = document, opts: MountOptions = {}): MountedPage {
@@ -52,6 +52,8 @@ export function mountAlgorithm(mod: AlgorithmModule, doc: Document = document, o
     slug: meta.slug,
     reference: code.lines.join("\n"),
     contract: contractOf(meta),
+    loadTestSet: mod.loadTestSet,
+    timeLimitMs: meta.limits.time_ms * BROWSER_TIME_MULTIPLIER,
   });
   editing.setLine(line);
 

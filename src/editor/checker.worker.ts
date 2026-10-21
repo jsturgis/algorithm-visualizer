@@ -11,9 +11,12 @@ self.onmessage = (e: MessageEvent<Request>) => {
   try {
     if (req.op === "init") { checker = createChecker(req.contract, libs); reply({ result: true }); return; }
     if (!checker) throw new Error("Checker used before init");
-    if (req.op === "diagnostics") reply({ result: checker.diagnostics(req.source) });
-    else if (req.op === "completions") reply({ result: checker.completions(req.source, req.offset) });
-    else reply({ result: checker.hover(req.source, req.offset) });
+    switch (req.op) {
+      case "diagnostics": reply({ result: checker.diagnostics(req.source) }); break;
+      case "transpile": reply({ result: checker.transpile(req.source) }); break;
+      case "completions": reply({ result: checker.completions(req.source, req.offset) }); break;
+      case "hover": reply({ result: checker.hover(req.source, req.offset) }); break;
+    }
   } catch (err) {
     reply({ error: (err as Error).message });
   }

@@ -47,6 +47,8 @@ export interface Checker {
   diagnostics(source: string): Diagnostic[];
   completions(source: string, offset: number): Completions | null;
   hover(source: string, offset: number): HoverInfo | null;
+  /** The source as JavaScript (types removed), as a CommonJS function body. See the judge's compile step. */
+  transpile(source: string): string;
 }
 
 /** The options that matter for what a solution may contain; they mirror the repo's tsconfig. */
@@ -128,6 +130,9 @@ export function createChecker(contract: Contract, libs: Record<string, string>):
   }
 
   function toDiagnostic(d: ts.Diagnostic, category: Category): Diagnostic {
+    // TypeScript numbers its grammar errors 1000–1999 but reports some of them (e.g. a declaration where a
+    // statement is expected, or non-erasable syntax) from the type-checking pass. They're syntax problems.
+    if (category === "type" && d.code >= 1000 && d.code < 2000) category = "syntax";
     let from = d.start ?? 0, to = from + (d.length ?? 0);
     let message = flatten(d.messageText);
     if (from >= source.length) {
@@ -172,6 +177,13 @@ export function createChecker(contract: Contract, libs: Record<string, string>):
           .filter(e => e.name !== CHECK)
           .map(e => ({ label: e.name, kind: e.kind, sortText: e.sortText })),
       };
+    },
+
+    transpile(s) {
+      return ts.transpileModule(s, {
+        compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.CommonJS, strict: true, removeComments: false },
+        reportDiagnostics: false,
+      }).outputText;
     },
 
     hover(s, offset) {

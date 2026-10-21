@@ -1,0 +1,30 @@
+/* The judge's progress and verdict, under the problem list. Colours from the site's tokens. */
+.verdict { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-left-width: 4px; border-radius: 8px; font-size: 14px; min-width: 0; }
+.verdict p { margin: 0; }
+.verdict code { font: 13px var(--mono); }
+.verdict.accepted { border-left-color: var(--goal); }
+.verdict.accepted .verdict-title { color: var(--goal); }
+.verdict.wrong, .verdict.rte, .verdict.compile { border-left-color: var(--low); }
+.verdict.wrong .verdict-title, .verdict.rte .verdict-title, .verdict.compile .verdict-title { color: var(--low); }
+.verdict.tle { border-left-color: var(--cur); }
+.verdict.tle .verdict-title { color: var(--cur); }
+.verdict.running, .verdict.cancelled { border-left-color: var(--muted); }
+.verdict-title { font: 700 16px var(--display); }
+.verdict.stale { opacity: .65; }
+.verdict .stale-note { color: var(--cur); font-size: 13px; }
+
+.verdict dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 12px; margin: 0; }
+.verdict dt { font: 12px var(--mono); color: var(--muted); padding-top: 3px; }
+.verdict dd { margin: 0; display: flex; gap: 8px; align-items: flex-start; min-width: 0; }
+.verdict dd code { flex: 1; min-width: 0; overflow-wrap: anywhere; background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; }
+.verdict mark { background: var(--low-soft); color: var(--low); border-radius: 3px; padding: 0 2px; font-weight: 600; }
+.verdict .count, .verdict .hidden-answer { color: var(--muted); font-family: var(--body); }
+.verdict .copy { padding: 2px 8px; font-size: 12px; }
+.verdict .difference, .verdict .type-note { font-size: 13px; color: var(--muted); }
+.verdict .error-message { margin: 0; padding: 8px 10px; background: var(--low-soft); color: var(--low); border-radius: 6px; font: 13px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.verdict .progress-line { display: flex; gap: 8px; align-items: center; }
+.verdict [data-judge="cancel"] { justify-self: start; padding: 4px 10px; font-size: 13px; }
+.spinner { width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--fg); border-radius: 50%; animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }

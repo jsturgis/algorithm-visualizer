@@ -9,6 +9,7 @@ problems/<slug>/             one problem package per algorithm (the canonical so
 problems/_template/          a complete, working package to copy (verified, not published)
 src/runtime/                 browser runtime: step player, page wiring, input constraints, edit mode
 src/editor/                  code editor (CodeMirror) and TypeScript checker, loaded on first Edit
+src/judge/                   judge for edited code: sandboxed runner and verdict panel, loaded on first Run tests
 src/home/                    home page
 src/styles/base.css          shared colours, layout and components
 site/index.html              home page shell (algorithm pages are generated into site/algorithms/)
@@ -61,7 +62,19 @@ For every package, including the template:
 
 ## Editing code on a page
 
-The code panel's **Edit** button opens the accepted solution in an editor (CodeMirror 6) with TypeScript diagnostics, autocomplete and hover types. The code is checked against the problem's contract: the entry function must keep its name, accept the `input` types from `problem.yaml` (`int` → `number`, `int[]` → `number[]`) and return its `returns` type. Edits are saved per algorithm in the browser. The animation always follows the reference solution, so line highlighting is turned off while the edited code differs from it. Edited code is not run.
+The code panel's **Edit** button opens the accepted solution in an editor (CodeMirror 6) with TypeScript diagnostics, autocomplete and hover types. The code is checked against the problem's contract: the entry function must keep its name, accept the `input` types from `problem.yaml` (`int` → `number`, `int[]` → `number[]`) and return its `returns` type. Edits are saved per algorithm in the browser. The animation always follows the reference solution, so line highlighting is turned off while the edited code differs from it.
+
+**Run tests** judges the edited code against the same tests `npm run verify` uses, in the same order (samples, edge cases, the seeded random tests, then the large tests), and stops at the first failure with an ICPC-style verdict:
+
+| Verdict | When |
+|---|---|
+| Accepted | every test passed |
+| Wrong Answer | a test's output differs; shows the input, the expected output, your output and the first difference |
+| Time Limit Exceeded | a test ran longer than the problem's `limits.time_ms` × 3 for running in a browser (`BROWSER_TIME_MULTIPLIER`); infinite loops are stopped by a watchdog that terminates the worker |
+| Runtime Error | the code threw, or crashed its worker |
+| Compile Error | the code has syntax or contract problems (type errors alone don't block a run) |
+
+The code runs in a fresh Web Worker per run, with the network and script-loading APIs removed. Answers are compared as canonical JSON, by `src/runtime/answers.ts`, which the verifier uses too. The build ships each package's test set as its own lazily loaded chunk (`virtual:testset/<slug>`): small tests with their inputs and answers, and large tests as their generator plus a SHA-256 fingerprint of the answer, so 100,000-element inputs aren't downloaded. The test set and the judge load only when someone first clicks Run tests: about 70 KB gzipped, most of it `fast-check`, which the generators need.
 
 The checker runs in a Web Worker using **TypeScript 6.0.3** (`typescript-js` in `package.json`), the last JavaScript-hosted release. The repo's own TypeScript 7 is a native binary with no browser build, so the two can disagree on newer language features. The editor and checker load only when someone first clicks Edit: about 160 KB and 1 MB gzipped.
 
