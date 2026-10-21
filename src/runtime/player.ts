@@ -22,6 +22,8 @@ export interface PlayerOptions<I> {
   buildTrace(input: I): Step[];
   setup(input: I): void;
   render(step: Step): void;
+  /** Called on every step with the highlighted code line (1-based), or null. */
+  onLine?(line: number | null): void;
 }
 
 export interface Player {
@@ -52,7 +54,7 @@ export function createPlayer<I>(o: PlayerOptions<I>): Player {
   const progress = controls.querySelector(".progress")!;
 
   codeBox.innerHTML = `
-    <p class="label">Code</p>
+    <div class="code-head"><p class="label">Code</p><div class="code-actions" data-code-actions></div></div>
     <pre class="code">${o.code.lines.map((l, k) =>
       `<span class="ln" data-l="${k + 1}"><span class="no">${k + 1}</span>${highlight(l) || " "}</span>`).join("")}</pre>
     ${o.codeNote ? `<p class="code-note">${o.codeNote}</p>` : ""}
@@ -77,8 +79,9 @@ export function createPlayer<I>(o: PlayerOptions<I>): Player {
 
   function render() {
     const s = trace[step];
-    const lineNo = o.code.labels[s.line];
+    const lineNo = o.code.labels[s.line] ?? null;
     lines.forEach(e => e.classList.toggle("on", Number(e.dataset.l) === lineNo));
+    o.onLine?.(lineNo);
     o.render(s);
     noteEl.innerHTML = s.note || "";
     const vals = s.vars ?? {};
@@ -133,6 +136,8 @@ export function createPlayer<I>(o: PlayerOptions<I>): Player {
   const onKey = (e: KeyboardEvent) => {
     const t = e.target as HTMLInputElement;
     if (t?.tagName === "INPUT" && t.type === "text") return;
+    // Typing in the code editor must not drive the player.
+    if (t instanceof Element && (t.closest(".cm-editor") || (t as HTMLElement).isContentEditable)) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === "ArrowRight") btn("next").click();
     else if (e.key === "ArrowLeft") btn("prev").click();

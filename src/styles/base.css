@@ -35,6 +35,8 @@
   --hl: #3a3416; --code-bg: #12161e; color-scheme: dark;
 }
 * { box-sizing: border-box; }
+/* Components set their own display, which would otherwise override the hidden attribute. */
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--body); }
 a { color: var(--curve); }
 code { font-family: var(--mono); font-size: .92em; }
@@ -86,6 +88,26 @@ pre.code { margin: 0; background: var(--code-bg); border: 1px solid var(--line);
 .ln.on { background: var(--hl); border-left-color: var(--fg); }
 .kw { color: var(--curve); } .num { color: var(--cur); }
 .code-note { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+
+/* Code panel header and edit mode */
+.code-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.code-head .label { margin: 0; }
+.code-actions { display: flex; gap: 6px; }
+.code-actions button, .confirm button { padding: 4px 10px; font-size: 13px; }
+.code-actions button[aria-pressed="true"] { border-color: var(--fg); }
+button.danger { color: var(--low); border-color: var(--low); }
+.edit-area { display: grid; gap: 10px; min-width: 0; }
+.edit-area > * { min-width: 0; }
+.confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--low); border-radius: 8px; background: var(--low-soft); font-size: 13px; }
+.edit-status { display: grid; gap: 4px; margin: 0; font-size: 13px; color: var(--muted); }
+.edit-status span { padding-left: 10px; border-left: 3px solid var(--cur); }
+.problems-label { margin: 4px 0 0; }
+.problems { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+.problems li.none { color: var(--goal); }
+.problems button { width: 100%; text-align: left; padding: 6px 10px; border-left: 3px solid var(--low); font: 13px/1.45 var(--body); white-space: pre-wrap; overflow-wrap: anywhere; }
+.problems li.warning button { border-left-color: var(--cur); }
+.problems .where { font-family: var(--mono); font-weight: 600; }
+.problems .kind { font: 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
 
 /* Variables */
 .vars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }

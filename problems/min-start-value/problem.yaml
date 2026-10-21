@@ -11,6 +11,7 @@ entry: minStartValue
 limits: { time_ms: 100 }
 input:
   - { name: nums, type: "int[]", length: [1, 100], value: [-100, 100] }
+returns: "int"
 visualization:
   default: { nums: [-3, 2, -3, 4, 2] }
   limits:

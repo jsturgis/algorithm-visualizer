@@ -14,6 +14,25 @@ export interface Param {
 
 export type Input = Record<string, unknown>;
 
+/** The TypeScript type for a problem.yaml type. */
+export const tsType = (t: ParamType) => (t === "int" ? "number" : "number[]");
+
+/** The entry function every solution must provide: name, parameters and return type, as TypeScript. */
+export interface Contract {
+  entry: string;
+  params: { name: string; type: string }[];
+  returns: string;
+}
+
+export const contractOf = (meta: Pick<ProblemMeta, "entry" | "input" | "returns">): Contract => ({
+  entry: meta.entry,
+  params: meta.input.map(p => ({ name: p.name, type: tsType(p.type) })),
+  returns: tsType(meta.returns),
+});
+
+/** "getAverages(nums: number[], k: number): number[]" */
+export const signatureOf = (c: Contract) => `${c.entry}(${c.params.map(p => `${p.name}: ${p.type}`).join(", ")}): ${c.returns}`;
+
 /** One snapshot in a visualization trace. */
 export interface Step {
   /** A `// @line <label>` label from the accepted solution; that line is highlighted. */
@@ -64,6 +83,8 @@ export interface ProblemMeta {
   entry: string;
   limits: { time_ms: number };
   input: Param[];
+  /** The entry function's return type. */
+  returns: ParamType;
   constraints_note: string[];
   visualization: {
     default: Input;

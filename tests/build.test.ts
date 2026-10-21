@@ -40,6 +40,36 @@ describe("vite build", () => {
     }
   });
 
+  test("the editor and the type checker are only loaded on demand", () => {
+    const read = (f: string) => readFileSync(path.join(OUT, f), "utf8");
+    // Everything a page loads before the learner clicks Edit: its scripts and their static imports.
+    const initial = (html: string) => {
+      const dir = path.dirname(html);
+      const queue = [...read(html).matchAll(/(?:src|href)="([^"]+\.js)"/g)].map(m => path.join(dir, m[1]));
+      const seen = new Set<string>();
+      while (queue.length) {
+        const f = path.normalize(queue.pop()!);
+        if (seen.has(f)) continue;
+        seen.add(f);
+        for (const m of read(f).matchAll(/(?:^|[;}\s])import\s*(?:[\w$*{},\s]+from\s*)?["']([^"']+\.js)["']/g)) {
+          queue.push(path.join(path.dirname(f), m[1]));
+        }
+      }
+      return [...seen];
+    };
+    const LANGUAGE_SERVICE = "createLanguageService", EDITOR = "cm-gutters";
+
+    for (const html of files.filter(f => f.endsWith(".html"))) {
+      for (const f of initial(html)) {
+        expect(read(f).includes(LANGUAGE_SERVICE), `${html} loads ${f}`).toBe(false);
+        expect(read(f).includes(EDITOR), `${html} loads ${f}`).toBe(false);
+      }
+    }
+    const js = files.filter(f => f.endsWith(".js"));
+    expect(js.filter(f => read(f).includes(LANGUAGE_SERVICE))).toEqual([expect.stringMatching(/checker\.worker-.*\.js$/)]);
+    expect(js.some(f => /editor-.*\.js$/.test(f) && read(f).includes(EDITOR))).toBe(true);
+  });
+
   test("each algorithm page's script bundle includes its code listing", () => {
     for (const p of loadPackages()) {
       const html = readFileSync(path.join(OUT, `algorithms/${p.slug}/index.html`), "utf8");

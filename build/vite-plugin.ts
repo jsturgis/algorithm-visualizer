@@ -11,6 +11,7 @@ import path from "node:path";
 import type { Plugin } from "vite";
 import { loadPackages, PROBLEMS, ROOT, type Package } from "./package.ts";
 import { renderPage } from "./render.ts";
+import { loadTsLibs } from "./ts-libs.ts";
 
 export const SITE = path.join(ROOT, "site");
 const RUNTIME = path.join(ROOT, "src/runtime/page.ts");
@@ -23,6 +24,15 @@ import view from ${JSON.stringify(p.paths.view)};
 ${p.paths.validator ? `import { validate } from ${JSON.stringify(p.paths.validator)};` : "const validate = undefined;"}
 export default { meta: ${JSON.stringify(p.meta)}, code: ${JSON.stringify(p.code)}, buildTrace, view, validate };
 `;
+
+/** virtual:ts-libs: the TypeScript standard-library declarations for the in-browser code checker. */
+export function tsLibs(): Plugin {
+  return {
+    name: "ts-libs",
+    resolveId: id => (id === "virtual:ts-libs" ? "\0virtual:ts-libs" : undefined),
+    load: id => (id === "\0virtual:ts-libs" ? `export default ${JSON.stringify(loadTsLibs())};` : undefined),
+  };
+}
 
 export function algorithms(): Plugin {
   let packages: Package[] = [];

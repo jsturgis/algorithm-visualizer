@@ -11,6 +11,7 @@ limits: { time_ms: 100 }
 input:
   - { name: nums, type: "int[]", length: [1, 10000], value: [-9999, 9999] }
   - { name: target, type: int, value: [-9999, 9999] }
+returns: "int"
 constraints_note:
   - "`nums` is sorted in ascending order."
   - "All values in `nums` are distinct."

@@ -2,13 +2,37 @@
 import path from "node:path";
 import { loadPackage, PROBLEMS } from "../../build/package.ts";
 import { renderBody } from "../../build/render.ts";
-import { mountAlgorithm } from "../../src/runtime/page.ts";
-import type { Player } from "../../src/runtime/player.ts";
+import { loadTsLibs } from "../../build/ts-libs.ts";
+import { createChecker } from "../../src/editor/checker.ts";
+import { inProcess, type CheckerFactory } from "../../src/editor/transport.ts";
+import { mountAlgorithm, type MountedPage, type MountOptions } from "../../src/runtime/page.ts";
 import type { AlgorithmModule } from "../../src/runtime/types.ts";
 
+// CodeMirror measures text with layout APIs that jsdom doesn't implement.
+if (typeof Range !== "undefined" && !Range.prototype.getClientRects) {
+  const empty = () => ({ length: 0, item: () => null, [Symbol.iterator]: [][Symbol.iterator] }) as unknown as DOMRectList;
+  Range.prototype.getClientRects = empty;
+  Range.prototype.getBoundingClientRect = () => new DOMRect();
+}
+
+/** The real checker, run in-process instead of in a Web Worker. */
+let libs: Record<string, string> | undefined;
+export const inProcessChecker: CheckerFactory = async contract => inProcess(createChecker(contract, (libs ??= loadTsLibs())));
+
+/** A Storage backed by a Map, so tests can inspect and share saved edits. */
+export class MemoryStorage implements Storage {
+  private items = new Map<string, string>();
+  get length() { return this.items.size; }
+  clear() { this.items.clear(); }
+  getItem(k: string) { return this.items.get(k) ?? null; }
+  key(i: number) { return [...this.items.keys()][i] ?? null; }
+  removeItem(k: string) { this.items.delete(k); }
+  setItem(k: string, v: string) { this.items.set(k, String(v)); }
+}
+
 export class Page {
-  player: Player;
-  constructor(player: Player) { this.player = player; }
+  player: MountedPage;
+  constructor(player: MountedPage) { this.player = player; }
 
   $<T extends HTMLElement = HTMLElement>(sel: string) { return document.querySelector<T>(sel)!; }
   $$(sel: string) { return [...document.querySelectorAll<HTMLElement>(sel)]; }
@@ -65,9 +89,9 @@ export class Page {
 
 let current: Page | null = null;
 
-export function mountPage(mod: AlgorithmModule): Page {
+export function mountPage(mod: AlgorithmModule, opts: MountOptions = {}): Page {
   current?.player.destroy();
   document.body.innerHTML = renderBody(loadPackage(path.join(PROBLEMS, mod.meta.slug)));
-  current = new Page(mountAlgorithm(mod));
+  current = new Page(mountAlgorithm(mod, document, { checker: inProcessChecker, storage: new MemoryStorage(), debounceMs: 5, ...opts }));
   return current;
 }
