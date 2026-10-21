@@ -9,6 +9,7 @@ assets/css/base.css        Shared colours, layout, controls, code view, array bo
 assets/js/player.js        Shared step-through player (AlgoPlayer.create)
 algorithms/<slug>/         One folder per algorithm page
 algorithms/_template/      A working example page to copy
+tests/                     Vitest tests (one file per page, plus shared player tests)
 ```
 
 ## Run locally
@@ -18,6 +19,19 @@ Open `index.html` in a browser, or serve the folder:
 ```sh
 python3 -m http.server 8000   # then visit http://localhost:8000
 ```
+
+## Run the tests
+
+```sh
+npm install
+npm test            # or: npm run test:watch
+```
+
+Each test loads the real page into jsdom, runs its scripts and works its controls. Remote URLs (Google Fonts) are stubbed out, so tests run offline.
+
+- `tests/player.test.js` runs against every page in `algorithms.js` plus the template: it loads without errors, every step highlights a code line and has a note, and Step/Back/Restart, the keyboard shortcuts, Play/Pause and the input row all work.
+- `tests/home.test.js` checks `algorithms.js` against the folders on disk and tests the cards, search and tag filters.
+- `tests/<slug>.test.js` calls the page's `buildTrace` directly, checks its answers against a brute-force reference on the problem's examples and on random inputs, and checks what the page shows.
 
 ## Add an algorithm
 
@@ -31,6 +45,8 @@ python3 -m http.server 8000   # then visit http://localhost:8000
    ```js
    { slug: "my-algorithm", title: "My Algorithm", summary: "One sentence.", tags: ["Graphs"], complexity: "O(n log n)" }
    ```
+   The shared player tests pick the new page up automatically.
+4. Add `tests/<slug>.test.js` that checks `buildTrace`'s answers against a brute-force version, and checks what the page shows.
 
 The player handles Play/Pause, Back/Step, Restart, speed, keyboard shortcuts (Space, ←, →, R), the highlighted code line, the variable cards and the custom-input row. `AlgoPlayer.svgEl`, `AlgoPlayer.parseIntList` and `AlgoPlayer.fmt` are there for building visuals and parsing input.
 
