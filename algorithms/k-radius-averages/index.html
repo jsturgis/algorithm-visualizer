@@ -4,23 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>K Radius Subarray Averages</title>
-<meta name="description" content="Step through the sliding-window solution to K Radius Subarray Averages.">
+<meta name="description" content="Step through the prefix-sum solution to K Radius Subarray Averages.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="../../assets/css/base.css">
 <style>
-/* Two aligned rows: nums (with the window) on top, avgs underneath */
+/* Three aligned rows. nums and avgs get an empty first column so prefix[j + 1] sits under nums[j]. */
 .rows { display: grid; gap: 6px; width: max-content; margin-inline: auto; }
 .row-label { font: 600 11px/1 var(--body); letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 6px 0 2px; }
-.box.leaving { background: var(--low-soft); border-color: var(--low); color: var(--low); transform: translateY(5px); }
+.spacer { width: 50px; }
+.box.sub { background: var(--low-soft); border-color: var(--low); color: var(--low); transform: translateY(-5px); }
 .box.unset { color: var(--muted); border-style: dashed; }
-.ptrs { display: grid; gap: 2px; justify-items: center; align-content: start; min-height: 40px; font: 600 11px var(--mono); }
-.ptr { padding: 1px 6px; border-radius: 4px; }
+.ptrs { display: grid; gap: 2px; justify-items: center; align-content: start; min-height: 22px; font: 600 11px var(--mono); }
+.ptr { padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
 .ptr.center { color: var(--goal); background: var(--goal-soft); }
-.ptr.in { color: var(--cur); background: var(--cur-soft); }
-.ptr.out { color: var(--low); background: var(--low-soft); }
+.ptr.add { color: var(--cur); background: var(--cur-soft); }
+.ptr.sub { color: var(--low); background: var(--low-soft); }
 .sum { font: 14px var(--mono); text-align: center; margin: 10px 0 0; overflow-wrap: anywhere; }
-.sum .minus { color: var(--low); } .sum .plus { color: var(--cur); }
+.sum .plus { color: var(--cur); } .sum .minus { color: var(--low); }
 .legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; font-size: 12px; color: var(--muted); margin: 0; }
 .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 2px solid; vertical-align: -2px; margin-right: 5px; }
 </style>
@@ -31,8 +32,8 @@
 
   <header>
     <h1>K Radius Subarray Averages</h1>
-    <p>For each index <code>i</code>, average the <code>2k + 1</code> numbers from <code>i − k</code> to <code>i + k</code> (integer division), or write <code>-1</code> if that range runs off either end. Re-adding every window from scratch costs <code>O(n·k)</code>. Instead, keep one window sum and slide it right: add the number that enters, subtract the number that leaves.</p>
-    <div class="meta"><span class="tag">Arrays</span><span class="tag">Sliding window</span><span class="tag mono">O(n) time</span><span class="tag mono">O(1) extra space</span></div>
+    <p>For each index <code>i</code>, average the <code>2k + 1</code> numbers from <code>i − k</code> to <code>i + k</code> (integer division), or write <code>-1</code> if that range runs off either end. Re-adding every window costs <code>O(n·k)</code>. Instead, build a prefix-sum array once, where <code>prefix[j]</code> is the sum of the first <code>j</code> numbers. Then any window's sum is one subtraction: everything through its right end, minus everything before its left end.</p>
+    <div class="meta"><span class="tag">Arrays</span><span class="tag">Prefix sum</span><span class="tag mono">O(n) time</span><span class="tag mono">O(n) space</span></div>
   </header>
 
   <div class="panel" data-controls></div>
@@ -42,14 +43,16 @@
       <div>
         <p class="legend">
           <span><i style="border-color:var(--curve);background:var(--curve-soft)"></i>in the window</span>
-          <span><i style="border-color:var(--cur);background:var(--cur-soft)"></i>entering</span>
-          <span><i style="border-color:var(--low);background:var(--low-soft)"></i>leaving</span>
-          <span><i style="border-color:var(--goal);background:var(--goal-soft)"></i>average written</span>
+          <span><i style="border-color:var(--cur);background:var(--cur-soft)"></i>reading / sum through window end</span>
+          <span><i style="border-color:var(--low);background:var(--low-soft)"></i>sum before window start</span>
+          <span><i style="border-color:var(--goal);background:var(--goal-soft)"></i>value written</span>
         </p>
         <div class="strip-scroll">
           <div class="rows">
             <p class="row-label">nums</p>
             <div class="strip" id="nums"></div>
+            <p class="row-label">prefix</p>
+            <div class="strip" id="prefix"></div>
             <p class="row-label">avgs</p>
             <div class="strip" id="avgs"></div>
           </div>
@@ -66,16 +69,18 @@
 <script src="../../assets/js/player.js"></script>
 <script>
 const $ = id => document.getElementById(id);
+const frac = (a, b) => (a / b).toFixed(2).replace(/\.?0+$/, "");
 let nums;
 
 function buildTrace({ nums, k }) {
   const T = [];
   const n = nums.length, size = 2 * k + 1;
-  const avgs = new Array(n).fill(null);   // null = still -1 and not yet decided
-  let sum = null, i = null, center = null, avg = null;
+  const avgs = new Array(n).fill(null);   // null = not created yet
+  let prefix = new Array(n + 1).fill(null);
+  let i = null, sum = null, avg = null, windowText = null;
   const snap = o => T.push(Object.assign(
-    { win: null, enter: null, leave: null, center: null, wrote: null, sumText: "" }, o,
-    { avgs: avgs.slice(), vars: { k, size, i, sum, center, avg } }));
+    { win: null, center: null, read: null, add: null, sub: null, wroteP: null, wroteA: null, sumText: "" }, o,
+    { avgs: avgs.slice(), prefix: prefix.slice(), vars: { k, size, i, window: windowText, sum, avg } }));
 
   snap({ line: 2, note: `Each window holds <b>size = 2·${k} + 1 = ${size}</b> numbers: the center plus ${k} on each side.` });
   avgs.fill(-1);
@@ -85,54 +90,62 @@ function buildTrace({ nums, k }) {
     return T;
   }
   snap({ line: 3, note: `Start every answer at <b>-1</b>. The first ${k} and last ${k} indices will keep it, because their window would run off the end.` });
-  sum = 0;
-  snap({ line: 5, flash: "sum", note: `<b>sum = 0</b>. Build the first window, indices 0 to ${size - 1}.` });
-  for (i = 0; i < size; i++) {
-    sum += nums[i];
-    snap({ line: 6, win: [0, i], enter: i, flash: "sum",
-      sumText: nums.slice(0, i + 1).join(" + ") + ` = ${sum}`,
-      note: `Add <b>nums[${i}] = ${nums[i]}</b>. <b>sum = ${sum}</b>` });
-  }
-  i = null; center = k; avg = Math.floor(sum / size);
-  avgs[center] = avg;
-  snap({ line: 7, win: [0, size - 1], center, wrote: center, flash: "avg",
-    sumText: `${sum} / ${size} = ${(sum / size).toFixed(2).replace(/\.?0+$/, "")} → ${avg}`,
-    note: `The first full window is centered at index <b>${k}</b>. <b>avgs[${k}] = ⌊${sum} / ${size}⌋ = ${avg}</b>` });
+  prefix.fill(0);
+  snap({ line: 5, wroteP: 0, note: `Make <b>prefix</b> one longer than nums. <b>prefix[0] = 0</b> is the sum of no numbers, and it sits in the empty column before nums[0].` });
 
-  for (i = size; i < n; i++) {
-    const out = i - size, before = sum;
-    sum += nums[i] - nums[out];
-    center = out + k + 1; avg = null;
-    snap({ line: 9, win: [out + 1, i], enter: i, leave: out, center, flash: "sum",
-      sumText: `${before} <span class="plus">+ ${nums[i]}</span> <span class="minus">− ${nums[out]}</span> = ${sum}`,
-      note: `Slide right. <b>nums[${i}] = ${nums[i]}</b> enters and <b>nums[${out}] = ${nums[out]}</b> leaves: <b>sum = ${before} + ${nums[i]} − ${nums[out]} = ${sum}</b>. The ${size - 1} numbers in between are already counted.` });
-    avg = Math.floor(sum / size);
-    avgs[center] = avg;
-    snap({ line: 10, win: [out + 1, i], center, wrote: center, flash: "avg",
-      sumText: `${sum} / ${size} = ${(sum / size).toFixed(2).replace(/\.?0+$/, "")} → ${avg}`,
-      note: `The window is now centered at <b>i − size + k + 1 = ${center}</b>. <b>avgs[${center}] = ⌊${sum} / ${size}⌋ = ${avg}</b>` });
+  for (i = 0; i < n; i++) {
+    prefix[i + 1] = prefix[i] + nums[i];
+    snap({ line: 6, read: i, add: i, wroteP: i + 1,
+      sumText: `prefix[${i + 1}] = prefix[${i}] + nums[${i}] = ${prefix[i]} + ${nums[i]} = ${prefix[i + 1]}`,
+      note: `<b>prefix[${i + 1}] = ${prefix[i + 1]}</b>, the sum of nums[0..${i}]. Each entry is the one before it plus one more number.` });
   }
-  i = null; center = null; avg = null;
-  snap({ line: 12, note: `Done. Every center with ${k} numbers on both sides has its average; the rest stay <b>-1</b>. Each number was added once and removed at most once, so this is <b>O(n)</b>.` });
+  i = null;
+
+  for (i = k; i < n - k; i++) {
+    const lo = i - k, hi = i + k;
+    windowText = `${lo}–${hi}`; avg = null;
+    sum = prefix[hi + 1] - prefix[lo];
+    snap({ line: 8, win: [lo, hi], center: i, add: hi + 1, sub: lo, flash: "sum",
+      sumText: `<span class="plus">prefix[${hi + 1}]</span> <span class="minus">− prefix[${lo}]</span> = ${prefix[hi + 1]} − ${prefix[lo]} = ${sum}`,
+      note: `Window for center <b>${i}</b> is nums[${lo}..${hi}]. <b>prefix[${hi + 1}] = ${prefix[hi + 1]}</b> is everything through nums[${hi}]; <b>prefix[${lo}] = ${prefix[lo]}</b> is everything before nums[${lo}]. The difference is the window: <b>sum = ${sum}</b>` });
+    avg = Math.floor(sum / size);
+    avgs[i] = avg;
+    snap({ line: 9, win: [lo, hi], center: i, wroteA: i, flash: "avg",
+      sumText: `${sum} / ${size} = ${frac(sum, size)} → ${avg}`,
+      note: `<b>avgs[${i}] = ⌊${sum} / ${size}⌋ = ${avg}</b>` });
+  }
+  i = null; sum = null; avg = null; windowText = null;
+  snap({ line: 11, note: `Done. Building prefix took one pass, and each average took one subtraction, so this is <b>O(n)</b> no matter how big k is.` });
   return T;
 }
 
 function setup(input) {
   nums = input.nums;
-  const cell = (id, k, v, idx) => `<div class="cell"><div class="box" id="${id}${k}">${v}</div>${idx ? `<span class="idx">${k}</span><div class="ptrs" id="p${k}"></div>` : ""}</div>`;
-  $("nums").innerHTML = nums.map((v, k) => cell("n", k, v, true)).join("");
-  $("avgs").innerHTML = nums.map((_, k) => cell("a", k, "", false)).join("");
+  const spacer = `<div class="cell"><div class="spacer"></div></div>`;
+  $("nums").innerHTML = spacer + nums.map((v, j) =>
+    `<div class="cell"><div class="box" id="n${j}">${v}</div><span class="idx">${j}</span><div class="ptrs" id="pn${j}"></div></div>`).join("");
+  $("prefix").innerHTML = [0, ...nums].map((_, j) =>
+    `<div class="cell"><div class="box" id="p${j}"></div><span class="idx">${j}</span><div class="ptrs" id="pp${j}"></div></div>`).join("");
+  $("avgs").innerHTML = spacer + nums.map((_, j) => `<div class="cell"><div class="box" id="a${j}"></div></div>`).join("");
 }
 
 function render(s) {
-  nums.forEach((_, k) => {
-    const inWin = s.win && k >= s.win[0] && k <= s.win[1];
-    $("n" + k).className = "box" + (k === s.leave ? " leaving" : k === s.enter ? " cursor" : inWin ? " done" : "");
-    $("p" + k).innerHTML = [["center", s.center], ["in", s.enter], ["out", s.leave]]
-      .filter(([, j]) => j === k).map(([name]) => `<span class="ptr ${name}">${name}</span>`).join("");
-    const a = s.avgs[k], box = $("a" + k);
+  nums.forEach((_, j) => {
+    const inWin = s.win && j >= s.win[0] && j <= s.win[1];
+    $("n" + j).className = "box" + (j === s.read ? " cursor" : inWin ? " done" : "");
+    $("pn" + j).innerHTML = j === s.center ? `<span class="ptr center">center</span>` : "";
+    const a = s.avgs[j], box = $("a" + j);
     box.textContent = a == null ? "" : a;
-    box.className = "box" + (k === s.wrote ? " found" : a == null ? " unset" : a === -1 ? "" : " done");
+    box.className = "box" + (j === s.wroteA ? " found" : a == null ? " unset" : a === -1 ? "" : " done");
+  });
+  s.prefix.forEach((v, j) => {
+    const box = $("p" + j);
+    box.textContent = v == null ? "" : v;
+    box.className = "box" + (j === s.wroteP ? " found" : j === s.sub ? " sub" : j === s.add ? " cursor" : v == null ? " unset" : "");
+    const tags = [];
+    if (s.win && j === s.add) tags.push(`<span class="ptr add">i+k+1</span>`);
+    if (s.win && j === s.sub) tags.push(`<span class="ptr sub">i−k</span>`);
+    $("pp" + j).innerHTML = tags.join("");
   });
   $("sum").innerHTML = s.sumText;
 }
@@ -143,24 +156,23 @@ AlgoPlayer.create({
     "    const n = nums.length, size = 2 * k + 1;",
     "    const avgs = new Array(n).fill(-1);",
     "    if (size > n) return avgs;",
-    "    let sum = 0;",
-    "    for (let i = 0; i < size; i++) sum += nums[i];",
-    "    avgs[k] = Math.floor(sum / size);",
-    "    for (let i = size; i < n; i++) {",
-    "        sum += nums[i] - nums[i - size];",
-    "        avgs[i - size + k + 1] = Math.floor(sum / size);",
+    "    const prefix = new Array(n + 1).fill(0);",
+    "    for (let i = 0; i < n; i++) prefix[i + 1] = prefix[i] + nums[i];",
+    "    for (let i = k; i < n - k; i++) {",
+    "        const sum = prefix[i + k + 1] - prefix[i - k];",
+    "        avgs[i] = Math.floor(sum / size);",
     "    }",
     "    return avgs;",
     "};"
   ],
-  codeNote: "Sliding window. <code>Math.floor</code> matches truncation here because every number is non-negative.",
-  vars: [{ key: "k" }, { key: "size" }, { key: "i" }, { key: "sum", tone: "curve" }, { key: "center" }, { key: "avg", tone: "goal" }],
+  codeNote: "Prefix sums. <code>Math.floor</code> matches truncation here because every number is non-negative.",
+  vars: [{ key: "k" }, { key: "size" }, { key: "i" }, { key: "window" }, { key: "sum", tone: "curve" }, { key: "avg", tone: "goal" }],
   inputs: [
     { id: "arr", label: "nums", value: "7, 4, 3, 9, 1, 8, 5, 2, 6" },
     { id: "k", label: "k", value: "3", short: true },
   ],
   parse: v => {
-    const nums = AlgoPlayer.parseIntList(v.arr, { min: 1, max: 14 });
+    const nums = AlgoPlayer.parseIntList(v.arr, { min: 1, max: 12 });
     if (nums.some(x => x < 0)) throw new Error("Numbers can't be negative.");
     const k = Number(v.k);
     if (!Number.isInteger(k) || k < 0 || k > 9) throw new Error("k must be a whole number from 0 to 9.");

@@ -13,8 +13,8 @@ window.ALGORITHMS = [
   {
     slug: "k-radius-averages",
     title: "K Radius Subarray Averages",
-    summary: "Slide a window of 2k + 1 numbers across the array, adding what enters and subtracting what leaves.",
-    tags: ["Arrays", "Sliding window"],
+    summary: "Average every window of 2k + 1 numbers with one prefix-sum subtraction each.",
+    tags: ["Arrays", "Prefix sum"],
     complexity: "O(n)",
   },
   {
