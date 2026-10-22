@@ -1,0 +1,22 @@
+title: Reverse String
+summary: Swap characters from both ends toward the middle, reversing the array in place with two pointers.
+explanation: >-
+  Put one pointer at each end of the character array. Swap the two characters, then move both pointers
+  one step toward the middle. When they meet, every character has been swapped into its mirrored
+  position, using O(1) extra space.
+source: LeetCode 344
+tags: [Arrays, Strings, Two pointers]
+complexity: { time: O(n), space: O(1) }
+entry: reverseString
+limits: { time_ms: 200 }
+input:
+  - { name: s, type: "string[]", length: [1, 100000], inner_length: [1, 1], chars: "[ -~]" }
+returns: "string[]"
+constraints_note:
+  - "Each `s[i]` is a single printable ASCII character."
+visualization:
+  default: { s: [h, e, l, l, o] }
+  limits:
+    s: { length: [1, 12] }
+  labels: { s: Characters }
+  code_note: Reverses the array in place and returns it. LeetCode's version returns nothing; returning the array lets the tests check it.

@@ -1,0 +1,21 @@
+title: Squares of a Sorted Array
+summary: Fill the answer from the back, taking the bigger square from either end of the sorted array.
+explanation: >-
+  The array is sorted, but negative numbers can have big squares, so the largest square is always at
+  one of the two ends. Keep a pointer at each end, compare their absolute values, write the bigger
+  square into the last free slot of the result, and move that pointer inward. One pass, no sorting.
+source: LeetCode 977
+tags: [Arrays, Two pointers]
+complexity: { time: O(n), space: O(n) }
+entry: sortedSquares
+limits: { time_ms: 200 }
+input:
+  - { name: nums, type: "int[]", length: [1, 10000], value: [-10000, 10000] }
+returns: "int[]"
+constraints_note:
+  - "`nums` is sorted in non-decreasing order."
+visualization:
+  default: { nums: [-4, -1, 0, 3, 10] }
+  limits:
+    nums: { length: [1, 12], value: [-99, 99] }
+  labels: { nums: nums (sorted) }

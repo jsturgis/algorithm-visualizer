@@ -1,0 +1,20 @@
+title: Is Subsequence
+summary: Scan t once, advancing a second pointer in s each time the next needed character turns up.
+explanation: >-
+  A subsequence keeps the order but may skip characters. Pointer `i` marks the next character of `s`
+  we still need; pointer `j` scans `t`. Every character of `t` moves `j` on, and a match also moves `i`
+  on. If `i` reaches the end of `s`, every character was found in order. One pass over `t`: `O(n + m)`.
+source: LeetCode 392
+tags: [Strings, Two pointers]
+complexity: { time: O(n + m), space: O(1) }
+entry: isSubsequence
+limits: { time_ms: 100 }
+input:
+  - { name: s, type: string, length: [0, 100], chars: "[a-z]" }
+  - { name: t, type: string, length: [0, 10000], chars: "[a-z]" }
+returns: bool
+visualization:
+  default: { s: ace, t: abcde }
+  limits:
+    s: { length: [0, 8] }
+    t: { length: [0, 14] }
