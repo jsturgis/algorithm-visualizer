@@ -163,6 +163,8 @@ button.danger { color: var(--low); border-color: var(--low); }
 .confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--low); border-radius: 8px; background: var(--low-soft); font-size: 13px; }
 .edit-status { display: grid; gap: 4px; margin: 0; font-size: 13px; color: var(--muted); }
 .edit-status span { padding-left: 10px; border-left: 3px solid var(--cur); }
+.edit-status [data-edit="reload"], .verdict [data-edit="reload"] { justify-self: start; margin-top: 4px; padding: 4px 10px; font-size: 13px; }
+.verdict [data-edit="reload"] { display: block; }
 .problems-label { margin: 4px 0 0; }
 .problems { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
 .problems li.none { color: var(--goal); }

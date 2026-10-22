@@ -6,7 +6,7 @@ import { createPlayer, type Player } from "./player.ts";
 import { attachTabs, type Tabs } from "./tabs.ts";
 import { BROWSER_TIME_MULTIPLIER, contractOf, type AlgorithmModule, type Input } from "./types.ts";
 
-export type MountOptions = Pick<EditingOptions, "storage" | "loadEditor" | "checker" | "debounceMs" | "runner" | "loadJudge">;
+export type MountOptions = Pick<EditingOptions, "storage" | "loadEditor" | "checker" | "debounceMs" | "runner" | "loadJudge" | "reload">;
 
 /** When an array strip is wider than its pane (narrow screens), scroll it so the active box is visible. */
 function keepActiveInView(stage: HTMLElement) {

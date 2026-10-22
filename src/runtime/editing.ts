@@ -36,6 +36,8 @@ export interface EditingOptions {
   runner?: () => Runner;
   /** Loads the judge module. Tests may replace it; the page loads it lazily. */
   loadJudge?: () => Promise<typeof Panel>;
+  /** Reloads the page (tests replace it). */
+  reload?: () => void;
   /** Animate a failing test's input. Returns an error message when it can't. */
   stepThrough?: (input: Record<string, unknown>) => string | null;
 }
@@ -50,6 +52,17 @@ export interface Editing {
   lastRun(): Promise<Verdict | null>;
   destroy(): void;
 }
+
+/**
+ * True when a lazily loaded part of the page (editor, judge) couldn't be fetched because the site was
+ * redeployed after this page was opened: each deploy replaces every asset file with new hashed names.
+ * The messages are Chrome's, Safari's and Firefox's, plus Vite's for CSS preloads.
+ */
+export const isOutdatedBuild = (e: unknown) =>
+  /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Unable to preload CSS/i
+    .test(e instanceof Error ? e.message : String(e));
+
+const OUTDATED = "This page is out of date: the site was updated after you opened it. Reload to get the new version.";
 
 /** Ignore line-ending and trailing-whitespace differences when comparing with the reference. */
 export const normalize = (s: string) => s.replace(/\r\n/g, "\n").split("\n").map(l => l.trimEnd()).join("\n").trimEnd();
@@ -118,6 +131,22 @@ export function attachEditing(o: EditingOptions): Editing {
   let editing = false;
   let line: number | null = null;
   let loadError = "";
+  let loadOutdated = false;
+  let saveTimer: ReturnType<typeof setTimeout> | undefined;
+
+  // "Reload" for an out-of-date page: save the edits first, so they're still there after reloading.
+  const reloadButton = () => {
+    const b = doc.createElement("button");
+    b.type = "button";
+    b.dataset.edit = "reload";
+    b.textContent = canSave ? "Reload (your edits are saved)" : "Reload";
+    b.onclick = () => {
+      clearTimeout(saveTimer);
+      if (editor && canSave) save(editor.getText());
+      (o.reload ?? (() => doc.defaultView?.location.reload()))();
+    };
+    return b;
+  };
   const saved = load();
   const outdated = !!saved && saved.ref !== refPrint;
   if (saved) toggleBtn.textContent = "Edit (changed)";
@@ -132,6 +161,7 @@ export function attachEditing(o: EditingOptions): Editing {
     if (editor && changed()) notes.push("Line highlighting is off while your code differs from the reference. The animation follows the reference solution.");
     if (editor && !canSave) notes.push("Your edits can't be saved in this browser, so they'll be lost when you leave the page.");
     statusEl.innerHTML = notes.map(n => `<span>${esc(n)}</span>`).join("");
+    if (loadOutdated) statusEl.appendChild(reloadButton());
     statusEl.hidden = !notes.length;
   }
 
@@ -203,7 +233,12 @@ export function attachEditing(o: EditingOptions): Editing {
     } catch (e) {
       verdictEl.hidden = false;
       verdictEl.className = "verdict rte";
-      verdictEl.textContent = `The tests couldn't run: ${(e as Error).message}`;
+      if (isOutdatedBuild(e)) {
+        verdictEl.textContent = `The tests couldn't load. ${OUTDATED}`;
+        verdictEl.appendChild(reloadButton());
+      } else {
+        verdictEl.textContent = `The tests couldn't run: ${(e as Error).message}`;
+      }
       return null;
     } finally {
       running = null;
@@ -225,7 +260,6 @@ export function attachEditing(o: EditingOptions): Editing {
     };
   }
 
-  let saveTimer: ReturnType<typeof setTimeout> | undefined;
   async function open() {
     try {
       const mod = await (o.loadEditor ?? (() => import("../editor/editor.ts")))();
@@ -248,7 +282,8 @@ export function attachEditing(o: EditingOptions): Editing {
       syncHighlight();
       syncRun();
     } catch (e) {
-      loadError = `The editor couldn't start: ${(e as Error).message}`;
+      loadOutdated = isOutdatedBuild(e);
+      loadError = loadOutdated ? `The editor couldn't load. ${OUTDATED}` : `The editor couldn't start: ${(e as Error).message}`;
       showStatus();
       throw e;
     }
