@@ -157,7 +157,7 @@ describe.each(Object.values(modules))("$meta.title page", mod => {
       field().value = value;
       field().dispatchEvent(new Event("input", { bubbles: true }));
     };
-    const edit = editsFor(first.type, mod.meta.visualization.default[first.name]);
+    const edit = editsFor(first, mod.meta.visualization.default[first.name]);
     const expectedSteps = (value: unknown) => {
       let input = { ...mod.meta.visualization.default, [first.name]: value };
       if (mod.view.prepare) input = mod.view.prepare(input);
@@ -193,25 +193,33 @@ describe.each(Object.values(modules))("$meta.title page", mod => {
     p.click("next");
     const before = p.progress();
     const first = mod.meta.input[0];
-    p.run({ [first.name]: editsFor(first.type, mod.meta.visualization.default[first.name]).invalidText });
+    p.run({ [first.name]: editsFor(first, mod.meta.visualization.default[first.name]).invalidText });
     expect(p.error()).not.toBe("");
     expect(p.progress()).toEqual(before);
   });
 });
 
 /**
- * Ways to change an input field of the given type: a different valid value, an invalid one, and a text
- * change that leaves the input the same (null for strings, which are taken exactly as typed).
+ * Ways to change an input field: a different valid value, an invalid one, and a text change that leaves
+ * the input the same (null for strings, which are taken exactly as typed).
  */
-function editsFor(type: string, value: unknown): { valid: unknown; validText: string; invalidText: string; sameInputText: string | null } {
-  switch (type) {
-    case "int[]":
+function editsFor(param: { type: string; value?: [number, number] }, value: unknown): { valid: unknown; validText: string; invalidText: string; sameInputText: string | null } {
+  switch (param.type) {
+    case "int[]": {
+      // Change the first number rather than the length, so rules that involve other inputs still hold
+      // (k ≤ nums.length, query ranges). Lowering it keeps a sorted array sorted.
+      const list = value as number[];
+      const [lo, hi] = param.value ?? [-Infinity, Infinity];
+      const first = list[0] - 1 >= lo ? list[0] - 1 : Math.min(list[0] + 1, hi);
+      const valid = [first, ...list.slice(1)];
+      return { valid, validText: valid.join(", "), invalidText: "1, two", sameInputText: list.join(", ") + ",  " };
+    }
     case "string[]": {
       const list = value as unknown[];
       return {
         valid: list.slice(0, -1),
         validText: list.slice(0, -1).join(", "),
-        invalidText: type === "int[]" ? "1, two" : "ab, c",   // c is fine; "ab" isn't one character
+        invalidText: "ab, c",   // c is fine; "ab" isn't one character
         sameInputText: list.join(", ") + ",  ",
       };
     }
@@ -220,6 +228,6 @@ function editsFor(type: string, value: unknown): { valid: unknown; validText: st
       return { valid: text.slice(0, -1), validText: text.slice(0, -1), invalidText: text + "!", sameInputText: null };
     }
     default:
-      throw new Error(`No edits for input type ${type}`);
+      throw new Error(`No edits for input type ${param.type}`);
   }
 }
