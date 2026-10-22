@@ -38,12 +38,12 @@ Output: ${esc(show(t.answer))}</pre>`).join("");
   <div class="panel" data-controls></div>
 
   <div class="grid">
+    <div class="panel" data-code></div>
     <div class="panel stage">
       <div data-stage></div>
       <p class="note" data-note></p>
       <div data-input></div>
     </div>
-    <div class="panel" data-code></div>
   </div>
 
   <details class="panel statement">
