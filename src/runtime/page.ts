@@ -12,7 +12,7 @@ export type MountOptions = Pick<EditingOptions, "storage" | "loadEditor" | "chec
 function keepActiveInView(stage: HTMLElement) {
   for (const scroller of stage.querySelectorAll<HTMLElement>(".strip-scroll")) {
     if (scroller.scrollWidth <= scroller.clientWidth) continue;
-    const active = scroller.querySelector<HTMLElement>(".box.cursor, .box.found, .box.sub, .box.leaving");
+    const active = scroller.querySelector<HTMLElement>(".box.cursor, .box.found, .box.bad, .box.sub, .box.leaving");
     if (!active) continue;
     const a = active.getBoundingClientRect(), s = scroller.getBoundingClientRect();
     if (a.left < s.left) scroller.scrollLeft -= s.left - a.left + 12;

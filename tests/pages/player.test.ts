@@ -157,9 +157,8 @@ describe.each(Object.values(modules))("$meta.title page", mod => {
       field().value = value;
       field().dispatchEvent(new Event("input", { bubbles: true }));
     };
-    // A different valid value for the first field: the default list without its last number.
-    const shorter = () => (mod.meta.visualization.default[first.name] as number[]).slice(0, -1);
-    const expectedSteps = (value: number[]) => {
+    const edit = editsFor(first.type, mod.meta.visualization.default[first.name]);
+    const expectedSteps = (value: unknown) => {
       let input = { ...mod.meta.visualization.default, [first.name]: value };
       if (mod.view.prepare) input = mod.view.prepare(input);
       return mod.buildTrace(input).length;
@@ -167,8 +166,8 @@ describe.each(Object.values(modules))("$meta.title page", mod => {
 
     test("redraws the animation for a valid new input without clicking Run, paused at step 1", async () => {
       p.click("next"); p.click("next");
-      const value = shorter();
-      type(value.join(", "));
+      const value = edit.valid;
+      type(edit.validText);
       await vi.waitFor(() => expect(p.progress()).toEqual([1, expectedSteps(value)]));
       expect(p.button("play").textContent).toContain("Play");
       expect(p.error()).toBe("");
@@ -177,14 +176,14 @@ describe.each(Object.values(modules))("$meta.title page", mod => {
     test("shows the error for invalid input and keeps the last valid animation", async () => {
       p.click("next");
       const before = p.progress();
-      type("1, two");
-      await vi.waitFor(() => expect(p.error()).toMatch(/whole number/));
+      type(edit.invalidText);
+      await vi.waitFor(() => expect(p.error()).not.toBe(""));
       expect(p.progress()).toEqual(before);
     });
 
-    test("doesn't restart when the text changes but the input doesn't", async () => {
+    test.skipIf(edit.sameInputText === null)("doesn't restart when the text changes but the input doesn't", async () => {
       p.click("next"); p.click("next");
-      type(field().value + ",  ");
+      type(edit.sameInputText!);
       await new Promise(r => setTimeout(r, LIVE_INPUT_DELAY_MS + 100));
       expect(p.progress()[0]).toBe(3);
     });
@@ -193,8 +192,34 @@ describe.each(Object.values(modules))("$meta.title page", mod => {
   test("Run with junk input shows an error and keeps the current run", () => {
     p.click("next");
     const before = p.progress();
-    p.run({ [mod.meta.input[0].name]: "1, two, 3" });
-    expect(p.error()).toMatch(/whole number/);
+    const first = mod.meta.input[0];
+    p.run({ [first.name]: editsFor(first.type, mod.meta.visualization.default[first.name]).invalidText });
+    expect(p.error()).not.toBe("");
     expect(p.progress()).toEqual(before);
   });
 });
+
+/**
+ * Ways to change an input field of the given type: a different valid value, an invalid one, and a text
+ * change that leaves the input the same (null for strings, which are taken exactly as typed).
+ */
+function editsFor(type: string, value: unknown): { valid: unknown; validText: string; invalidText: string; sameInputText: string | null } {
+  switch (type) {
+    case "int[]":
+    case "string[]": {
+      const list = value as unknown[];
+      return {
+        valid: list.slice(0, -1),
+        validText: list.slice(0, -1).join(", "),
+        invalidText: type === "int[]" ? "1, two" : "ab, c",   // c is fine; "ab" isn't one character
+        sameInputText: list.join(", ") + ",  ",
+      };
+    }
+    case "string": {
+      const text = value as string;
+      return { valid: text.slice(0, -1), validText: text.slice(0, -1), invalidText: text + "!", sameInputText: null };
+    }
+    default:
+      throw new Error(`No edits for input type ${type}`);
+  }
+}

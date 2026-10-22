@@ -88,7 +88,8 @@ export function parseField(text: string, p: Param): unknown {
     case "string":
       return text;   // as typed: spaces can matter
     case "string[]":
-      return text.trim() === "" ? [] : text.split(",").map(s => s.trim());
+      // Items are trimmed, and empty items (e.g. from a trailing comma) are ignored.
+      return text.split(",").map(s => s.trim()).filter(s => s !== "");
   }
 }
 
