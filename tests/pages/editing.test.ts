@@ -241,6 +241,19 @@ describe("loading", () => {
     expect(status()).not.toMatch(/Starting/);
   });
 
+  test("an editor from an older deploy explains the page is out of date and offers Reload", async () => {
+    const reload = vi.fn();
+    p = mountPage(mod, {
+      storage, reload,
+      loadEditor: () => Promise.reject(new TypeError("Importing a module script failed.")),
+    });
+    editBtn().click();
+    await p.player.editing.ready();
+    expect(status()).toContain("The editor couldn't load. This page is out of date");
+    p.$<HTMLButtonElement>('[data-edit="status"] [data-edit="reload"]').click();
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
   test("explains when the editor can't start", async () => {
     p = mountPage(mod, { storage, checker: async () => { throw new Error("worker blocked"); } });
     editBtn().click();

@@ -4,7 +4,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import mod from "virtual:algorithm/k-radius-averages";
 import { inProcessRunner, type Runner } from "../../src/judge/runner.ts";
-import { mountPage, type Page } from "./helpers.ts";
+import { MemoryStorage, mountPage, type Page } from "./helpers.ts";
 
 const reference = mod.code.lines.join("\n");
 const total = (await mod.loadTestSet()).tests.length;
@@ -196,5 +196,33 @@ describe("running", () => {
     expect(p.progress()[1]).toBe(steps);
     p.toEnd();
     expect(p.texts("#avgs .box")).toEqual(["-1", "-1", "-1", "5", "4", "4", "-1", "-1", "-1"]);
+  });
+});
+
+describe("a page opened before the site was redeployed", () => {
+  test("explains that the page is out of date, and Reload saves the edits first", async () => {
+    const storage = new MemoryStorage();
+    const reload = vi.fn();
+    p = mountPage(mod, {
+      storage, reload,
+      loadJudge: () => Promise.reject(new TypeError("Failed to fetch dynamically imported module: https://example.test/assets/panel-OLD.js")),
+    });
+    await openEditor();
+    setText(reference.replace("Math.floor(sum / size)", "Math.round(sum / size)"));
+    expect(await runTests()).toBeNull();
+    expect(verdict().textContent).toContain("The tests couldn't load. This page is out of date: the site was updated after you opened it.");
+    const button = p.$<HTMLButtonElement>('.verdict [data-edit="reload"]');
+    expect(button.textContent).toBe("Reload (your edits are saved)");
+    button.click();
+    expect(reload).toHaveBeenCalledOnce();
+    expect(JSON.parse(storage.getItem("algorithm-visualizer:edit:k-radius-averages")!).code).toContain("Math.round");
+  });
+
+  test("other loading errors are reported as they are, without Reload", async () => {
+    p = mountPage(mod, { loadJudge: () => Promise.reject(new Error("disk on fire")) });
+    await openEditor();
+    await runTests();
+    expect(verdict().textContent).toBe("The tests couldn't run: disk on fire");
+    expect(p.$('.verdict [data-edit="reload"]')).toBeNull();
   });
 });
