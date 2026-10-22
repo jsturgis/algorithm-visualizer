@@ -37,6 +37,17 @@ problems/k-radius-averages/
   visualization/view.ts, view.css       draws the picture for a step
 ```
 
+**Input and return types** (`input[].type`, `returns`):
+
+| Type | TypeScript | Input field | Constraints |
+|---|---|---|---|
+| `int` | `number` | `3` | `value` |
+| `int[]` | `number[]` | `1, 2, 3` | `length`, `value` (each number) |
+| `int[][]` | `number[][]` | `[0, 1], [2, 3]` | `length`, `inner_length` (each inner array), `value` |
+| `string` | `string` | the text as typed | `length`, `chars` (a regex character class, e.g. `"[01]"`) |
+| `string[]` | `string[]` | `h, e, l, l, o` | `length`, `inner_length` (each item), `chars` |
+| `bool`, `bool[]`, `float` | `boolean`, `boolean[]`, `number` | (return types only) | |
+
 Two differences from ICPC: test files are JSON rather than whitespace-separated text, and submissions are TypeScript modules that export the entry function rather than programs reading stdin.
 
 ## What `npm run verify` checks

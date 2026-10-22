@@ -10,7 +10,10 @@ function constraintLines(params: Param[]): string[] {
   return params.flatMap(p => {
     const out: string[] = [];
     if (p.length) out.push(`${num(p.length[0])} ≤ ${p.name}.length ≤ ${num(p.length[1])}`);
-    if (p.value) out.push(`${num(p.value[0])} ≤ ${p.type === "int[]" ? `${p.name}[i]` : p.name} ≤ ${num(p.value[1])}`);
+    if (p.inner_length) out.push(`${num(p.inner_length[0])} ≤ ${p.name}[i].length ≤ ${num(p.inner_length[1])}`);
+    const element = p.type === "int[]" ? `${p.name}[i]` : p.type === "int[][]" ? `${p.name}[i][j]` : p.name;
+    if (p.value) out.push(`${num(p.value[0])} ≤ ${element} ≤ ${num(p.value[1])}`);
+    if (p.chars) out.push(`${p.type === "string[]" ? `Every ${p.name}[i]` : p.name} uses only the characters ${p.chars}`);
     return out;
   });
 }

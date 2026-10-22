@@ -167,3 +167,24 @@ describe("hover", () => {
     expect(checker.hover(reference, reference.indexOf("\n") + 1)).toBeNull();
   });
 });
+
+describe("contracts with string and boolean types", () => {
+  const palindrome = createChecker(contractOf({ entry: "isPalindrome", input: [{ name: "s", type: "string" }], returns: "bool" }), libs);
+  const solution = "function isPalindrome(s: string): boolean {\n    let i = 0, j = s.length - 1;\n    while (i < j) if (s[i++] !== s[j--]) return false;\n    return true;\n}";
+
+  test("a correct string → boolean solution has no problems", () => {
+    expect(palindrome.diagnostics(solution)).toEqual([]);
+  });
+
+  test("returning a number where a boolean is expected is a contract error", () => {
+    const [d] = palindrome.diagnostics(solution.replace("): boolean {", "): number {").replace("return false", "return 0").replace("return true", "return 1"));
+    expect(d).toMatchObject({ category: "contract", message: expect.stringMatching(/^isPalindrome must accept \(s: string\) and return boolean\./) });
+  });
+
+  test("string methods are offered on the parameter", () => {
+    const src = solution.replace("let i = 0", "s.");
+    const labels = palindrome.completions(src, src.indexOf("s.") + 2)!.items.map(i => i.label);
+    expect(labels).toEqual(expect.arrayContaining(["charAt", "toLowerCase", "length"]));
+  });
+});
+

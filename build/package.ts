@@ -15,7 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
-import type { Code, Input, ProblemMeta } from "../src/runtime/types.ts";
+import { PARAM_TYPES, RETURN_TYPES, type Code, type Input, type ProblemMeta } from "../src/runtime/types.ts";
 import { toDisplayCode } from "./code.ts";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -24,10 +24,14 @@ export const PROBLEMS = path.join(ROOT, "problems");
 const Range = z.tuple([z.number(), z.number()]).refine(([lo, hi]) => lo <= hi, "range must be [min, max]");
 const Param = z.strictObject({
   name: z.string().regex(/^[A-Za-z_]\w*$/),
-  type: z.enum(["int", "int[]"]),
+  type: z.enum(PARAM_TYPES),
   length: Range.optional(),
   value: Range.optional(),
-});
+  inner_length: Range.optional(),
+  chars: z.string().refine(c => { try { new RegExp(`^${c}$`, "u"); return true; } catch { return false; } }, "chars must be a regex character class").optional(),
+}).refine(p => !p.inner_length || p.type === "int[][]" || p.type === "string[]", "inner_length is only for int[][] and string[]")
+  .refine(p => !p.chars || p.type === "string" || p.type === "string[]", "chars is only for string and string[]")
+  .refine(p => !p.value || p.type.startsWith("int"), "value is only for int types");
 
 const MetaSchema = z.strictObject({
   title: z.string().min(1),
@@ -39,11 +43,11 @@ const MetaSchema = z.strictObject({
   entry: z.string().regex(/^[A-Za-z_]\w*$/),
   limits: z.strictObject({ time_ms: z.number().positive() }).default({ time_ms: 1000 }),
   input: z.array(Param).min(1),
-  returns: z.enum(["int", "int[]"]),
+  returns: z.enum(RETURN_TYPES),
   constraints_note: z.array(z.string()).default([]),
   visualization: z.strictObject({
     default: z.record(z.string(), z.unknown()),
-    limits: z.record(z.string(), Param.pick({ length: true, value: true }).strict()).default({}),
+    limits: z.record(z.string(), z.strictObject({ length: Range.optional(), value: Range.optional(), inner_length: Range.optional() })).default({}),
     labels: z.record(z.string(), z.string()).default({}),
     code_note: z.string().optional(),
   }),

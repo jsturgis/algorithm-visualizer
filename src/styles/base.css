@@ -138,6 +138,21 @@ header p { margin: 0; color: var(--muted); max-width: 70ch; }
 .box.cursor { background: var(--cur-soft); border-color: var(--cur); color: var(--cur); transform: translateY(-5px); }
 .box.found { background: var(--goal-soft); border-color: var(--goal); color: var(--goal); transform: translateY(-5px); }
 .box.out { opacity: .3; }
+.box.bad { background: var(--low-soft); border-color: var(--low); color: var(--low); }
+.box.win { background: var(--curve-soft); border-color: var(--curve); }   /* inside a window, but not otherwise marked */
+.box.blank { color: var(--muted); }
+/* Pointer labels under a strip's boxes (drawStrip in src/runtime/strip.ts) */
+/* Labels never widen their cell (that would break the row's spacing); they overflow centred under the box. */
+.strip .ptrs { display: grid; gap: 2px; justify-items: center; align-content: start; min-height: 20px; font: 600 11px var(--mono); width: 0; min-width: 100%; }
+.strip .ptr { padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+.ptr.blue { color: var(--curve); background: var(--curve-soft); }
+.ptr.amber { color: var(--cur); background: var(--cur-soft); }
+.ptr.red { color: var(--low); background: var(--low-soft); }
+.ptr.green { color: var(--goal); background: var(--goal-soft); }
+.ptr.grey { color: var(--muted); background: var(--code-bg); }
+/* A one-line calculation under a strip (e.g. "1 + 9 = 10"), and a note shown in place of an empty strip */
+.sum-line { font: 14px var(--mono); text-align: center; margin: 10px 0 0; min-height: 1.5em; }
+.empty-note { font-size: 13px; color: var(--muted); text-align: center; margin: 4px 0; }
 .idx { font: 12px var(--mono); color: var(--muted); }
 
 .note { font-size: 15px; min-height: 48px; margin: 0; max-width: 65ch; }
