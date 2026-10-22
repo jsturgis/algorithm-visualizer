@@ -86,3 +86,40 @@ describe("isOutdatedBuild", () => {
     expect(isOutdatedBuild(new Error("The type checker stopped."))).toBe(false);
   });
 });
+
+describe("constraints for string, string[] and int[][] inputs", () => {
+  const s: Param = { name: "s", type: "string", length: [1, 5], chars: "[01]" };
+  const chars: Param = { name: "letters", type: "string[]", length: [1, 4], inner_length: [1, 1], chars: "[a-z]" };
+  const queries: Param = { name: "queries", type: "int[][]", length: [1, 3], inner_length: [2, 2], value: [0, 9] };
+
+  test("accept valid values", () => {
+    expect(checkInput({ s: "0110", letters: ["a", "b"], queries: [[0, 1], [2, 9]] }, [s, chars, queries])).toEqual([]);
+  });
+
+  test.each([
+    [{ s: 5 }, [s], "s must be text."],
+    [{ s: "" }, [s], "s must have between 1 and 5 characters."],
+    [{ s: "012" }, [s], 's can\'t contain "2".'],
+    [{ letters: "ab" }, [chars], "letters must be a list of text items."],
+    [{ letters: ["a", "bc"] }, [chars], "Every item of letters must be a single character."],
+    [{ letters: ["a", "B"] }, [chars], 'letters can\'t contain "B".'],
+    [{ letters: ["a", "b", "c", "d", "e"] }, [chars], "letters must have between 1 and 4 items."],
+    [{ queries: [1, 2] }, [queries], "queries must be a list of lists of whole numbers."],
+    [{ queries: [[1, 2, 3]] }, [queries], "Every entry of queries must have between 2 and 2 numbers."],
+    [{ queries: [[1, 10]] }, [queries], "Every number in queries must be between 0 and 9."],
+    [{ queries: [] }, [queries], "queries must have between 1 and 3 entries."],
+  ])("%j → %s", (input, params, message) => {
+    expect(checkInput(input, params as Param[])).toContain(message);
+  });
+
+  test("parse and format round-trip", () => {
+    expect(parseField(" a b ", s)).toBe(" a b ");          // strings are kept as typed
+    expect(parseField("h, e , l", chars)).toEqual(["h", "e", "l"]);
+    expect(formatField(["h", "e", "l"], chars)).toBe("h, e, l");
+    expect(parseField("[0, 1], [2, 3]", queries)).toEqual([[0, 1], [2, 3]]);
+    expect(parseField("[[0, 1]]", queries)).toEqual([[0, 1]]);
+    expect(formatField([[0, 1], [2, 3]], queries)).toBe("[0, 1], [2, 3]");
+    expect(() => parseField("[0, 1", queries)).toThrow(/like \[0, 1\], \[2, 3\]/);
+    expect(() => parseField("[0, x]", queries)).toThrow(/like \[0, 1\], \[2, 3\]/);
+  });
+});

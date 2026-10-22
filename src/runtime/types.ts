@@ -1,15 +1,24 @@
 // Shapes shared by the build, the verifier, the problem packages and the browser runtime.
 
-export type ParamType = "int" | "int[]";
+/** Types a solution's arguments can have (problem.yaml `input[].type`). */
+export const PARAM_TYPES = ["int", "int[]", "int[][]", "string", "string[]"] as const;
+/** Types a solution can return (problem.yaml `returns`): any argument type, or a boolean / float answer. */
+export const RETURN_TYPES = [...PARAM_TYPES, "bool", "bool[]", "float"] as const;
+export type ParamType = (typeof PARAM_TYPES)[number];
+export type ReturnType = (typeof RETURN_TYPES)[number];
 
 /** One argument of the solution's entry function, with its constraints from problem.yaml. */
 export interface Param {
   name: string;
   type: ParamType;
-  /** Inclusive [min, max] array length (int[] only). */
+  /** Inclusive [min, max] length of the array or string. */
   length?: [number, number];
-  /** Inclusive [min, max] for the value, or for each element of an int[]. */
+  /** Inclusive [min, max] for an int, or for every number inside an int[] / int[][]. */
   value?: [number, number];
+  /** Inclusive [min, max] length of each inner array (int[][]) or each string (string[]). */
+  inner_length?: [number, number];
+  /** A regex character class every character must match (string, string[]), e.g. "[a-z]" or "[01]". */
+  chars?: string;
 }
 
 export type Input = Record<string, unknown>;
@@ -19,7 +28,12 @@ export type Input = Record<string, unknown>;
 export const BROWSER_TIME_MULTIPLIER = 3;
 
 /** The TypeScript type for a problem.yaml type. */
-export const tsType = (t: ParamType) => (t === "int" ? "number" : "number[]");
+const TS_TYPES: Record<ReturnType, string> = {
+  int: "number", "int[]": "number[]", "int[][]": "number[][]",
+  string: "string", "string[]": "string[]",
+  bool: "boolean", "bool[]": "boolean[]", float: "number",
+};
+export const tsType = (t: ReturnType) => TS_TYPES[t];
 
 /** The entry function every solution must provide: name, parameters and return type, as TypeScript. */
 export interface Contract {
@@ -88,11 +102,11 @@ export interface ProblemMeta {
   limits: { time_ms: number };
   input: Param[];
   /** The entry function's return type. */
-  returns: ParamType;
+  returns: ReturnType;
   constraints_note: string[];
   visualization: {
     default: Input;
-    limits: Record<string, Pick<Param, "length" | "value">>;
+    limits: Record<string, Pick<Param, "length" | "value" | "inner_length">>;
     labels: Record<string, string>;
     code_note?: string;
   };

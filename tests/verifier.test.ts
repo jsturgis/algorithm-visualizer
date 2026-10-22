@@ -92,6 +92,10 @@ describe("verifier", () => {
     expect(failed).toEqual(["accepted solution type-checks against the problem contract"]);
   });
 
+  test("rejects constraints that don't fit the input's type", async () => {
+    await expect(failures(dir => replaceIn(path.join(dir, "problem.yaml"), 'value: [-1000000, 1000000] }', 'value: [-1000000, 1000000], chars: "[a-z]" }'))).rejects.toThrow(/chars is only for string and string\[\]/);
+  });
+
   test("rejects a problem.yaml that doesn't match the schema", async () => {
     await expect(failures(dir => replaceIn(path.join(dir, "problem.yaml"), "type: \"int[]\"", "type: float"))).rejects.toThrow(/input\.0\.type/);
   });
