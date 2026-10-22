@@ -1,0 +1,23 @@
+title: Pair With Target Sum
+summary: In a sorted array, move the left pointer up when the sum is too small and the right pointer down when it's too big.
+explanation: >-
+  Start with the smallest and largest numbers. If their sum is too small, the only way to grow it is to
+  move the left pointer right; if it's too big, move the right pointer left. Each move rules out a whole
+  row of pairs, so one pass finds a pair if there is one: `O(n)` instead of checking every pair.
+source: Two-pointer example (compare LeetCode 167)
+tags: [Arrays, Two pointers]
+complexity: { time: O(n), space: O(1) }
+entry: hasPairWithSum
+limits: { time_ms: 100 }
+input:
+  - { name: nums, type: "int[]", length: [1, 10000], value: [-100000, 100000] }
+  - { name: target, type: int, value: [-200000, 200000] }
+returns: bool
+constraints_note:
+  - "`nums` is sorted in increasing order, with no repeated values."
+visualization:
+  default: { nums: [1, 2, 4, 6, 8, 9, 14, 15], target: 13 }
+  limits:
+    nums: { length: [1, 12], value: [-99, 99] }
+    target: { value: [-198, 198] }
+  labels: { nums: "nums (sorted, no repeats)", target: target }

@@ -1,0 +1,24 @@
+title: Merge Two Sorted Arrays
+summary: Walk both sorted arrays at once, always taking the smaller front element.
+explanation: >-
+  Keep one pointer in each array. The smallest remaining element overall is always at one of the two
+  pointers, so compare them, append the smaller one, and advance that pointer. When one array runs
+  out, the rest of the other is already sorted and can be copied as is. Each element is handled once:
+  `O(n + m)`.
+source: Two-pointer example (compare LeetCode 88)
+tags: [Arrays, Two pointers]
+complexity: { time: O(n + m), space: O(n + m) }
+entry: mergeSorted
+limits: { time_ms: 100 }
+input:
+  - { name: arr1, type: "int[]", length: [0, 10000], value: [-100000, 100000] }
+  - { name: arr2, type: "int[]", length: [0, 10000], value: [-100000, 100000] }
+returns: "int[]"
+constraints_note:
+  - "`arr1` and `arr2` are each sorted in non-decreasing order."
+visualization:
+  default: { arr1: [1, 4, 7, 20], arr2: [3, 5, 6] }
+  limits:
+    arr1: { length: [0, 8], value: [-99, 99] }
+    arr2: { length: [0, 8], value: [-99, 99] }
+  labels: { arr1: arr1 (sorted), arr2: arr2 (sorted) }
