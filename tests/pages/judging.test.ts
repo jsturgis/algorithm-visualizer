@@ -199,6 +199,45 @@ describe("running", () => {
   });
 });
 
+describe("after a run", () => {
+  test("Reset clears the verdict about the discarded code", async () => {
+    p = mountPage(mod);
+    await openEditor();
+    setText(reference.replace("Math.floor(sum / size)", "Math.round(sum / size)"));
+    await runTests();
+    expect(verdict().hidden).toBe(false);
+    p.$<HTMLButtonElement>('[data-edit="reset"]').click();
+    p.$<HTMLButtonElement>('[data-edit="discard"]').click();
+    expect(verdict().hidden).toBe(true);
+    expect(verdict().textContent).toBe("");
+  });
+
+  test("Step through this input animates the failing test's input", async () => {
+    p = mountPage(mod);
+    await openEditor();
+    setText(reference.replace("Math.floor(sum / size)", "Math.round(sum / size)"));
+    const v = await runTests();
+    expect(v).toMatchObject({ kind: "WrongAnswer", test: { name: "sample/1" } });
+    p.click("next"); p.click("next");
+    p.$<HTMLButtonElement>('[data-judge="step-through"]').click();
+    expect(p.$<HTMLInputElement>("#in-nums").value).toBe("7, 4, 3, 9, 1, 8, 5, 2, 6");
+    expect(p.$<HTMLInputElement>("#in-k").value).toBe("3");
+    expect(p.progress()[0]).toBe(1);
+    expect(p.$(".verdict .step-through-note").textContent).toMatch(/now shows this input/);
+  });
+
+  test("Step through this input explains when the input is too big to animate", async () => {
+    p = mountPage(mod);
+    await openEditor();
+    setText(lastIndexReplace("return avgs;", "if (n > 1000) avgs[0] = 7;\n    return avgs;"));
+    expect(await runTests()).toMatchObject({ kind: "WrongAnswer", test: { category: "large" } });
+    const before = p.$<HTMLInputElement>("#in-nums").value;
+    p.$<HTMLButtonElement>('[data-judge="step-through"]').click();
+    expect(p.$(".verdict .step-through-note").textContent).toMatch(/^This input is too big to animate here: nums must have between 1 and 12 numbers/);
+    expect(p.$<HTMLInputElement>("#in-nums").value).toBe(before);
+  });
+});
+
 describe("a page opened before the site was redeployed", () => {
   test("explains that the page is out of date, and Reload saves the edits first", async () => {
     const storage = new MemoryStorage();

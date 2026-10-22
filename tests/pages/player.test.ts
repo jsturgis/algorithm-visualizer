@@ -21,15 +21,23 @@ describe.each(Object.values(modules))("$meta.title page", mod => {
     expect(p.$("[data-code]").textContent).not.toContain("@line");
   });
 
-  test("includes the statement, every sample and the constraints", () => {
-    const statement = p.$(".statement").textContent!;
-    expect(statement).toContain("Example 1");
-    for (const param of mod.meta.input) expect(statement).toContain(param.name);
-    if (mod.meta.source) expect(statement).toContain(mod.meta.source);
+  test("the Problem tab has the approach, statement, every sample and the constraints", () => {
+    const problem = p.$('[data-tab-panel="problem"]').textContent!;
+    expect(problem).toContain("Approach");
+    expect(problem).toContain("Example 1");
+    for (const param of mod.meta.input) expect(problem).toContain(param.name);
+    if (mod.meta.source) expect(problem).toContain(mod.meta.source);
   });
 
-  test("puts the controls first, then the code panel, then the animation", () => {
-    const order = [p.$("[data-controls]"), p.$("[data-code]"), p.$(".stage")];
+  test("is a workspace: Problem / Code tabs on the left, the animation on the right, controls in a bar", () => {
+    const left = p.$(".pane-left"), right = p.$(".pane-right");
+    expect(left.querySelector('[data-tab-panel="code"] [data-code]')).not.toBeNull();
+    expect(left.querySelector('[data-tab-panel="code"] [data-edit="toggle"]')).not.toBeNull();   // Edit lives in the Code tab
+    for (const sel of ["[data-stage]", "[data-note]", "[data-input]"]) expect(right.querySelector(sel), sel).not.toBeNull();
+    expect(p.$(".control-bar").matches("[data-controls]")).toBe(true);
+    expect(p.$(".control-bar").querySelector('[data-act="play"]')).not.toBeNull();
+    // Reading order matches the layout: left pane, right pane, then the control bar.
+    const order = [left, right, p.$(".control-bar")];
     for (let i = 1; i < order.length; i++) {
       expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }
@@ -74,6 +82,47 @@ describe.each(Object.values(modules))("$meta.title page", mod => {
     expect(p.progress()[0]).toBe(2);
     p.press("r");
     expect(p.progress()[0]).toBe(1);
+  });
+
+  test("Space on a focused button or tab presses it instead of playing", () => {
+    for (const sel of ['[data-act="next"]', '[data-tab="code"]', '[data-act="reset"]']) {
+      const el = p.$<HTMLElement>(sel);
+      el.focus();
+      el.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true }));
+      expect(p.button("play").getAttribute("aria-label"), sel).toBe("Play");
+    }
+  });
+
+  test("arrow keys on the speed slider change the speed, not the step; on a button they still step", () => {
+    const slider = p.$<HTMLInputElement>('[data-act="speed"]');
+    slider.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    expect(p.progress()[0]).toBe(1);
+    p.button("next").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    expect(p.progress()[0]).toBe(2);
+  });
+
+  test("the speed slider and the icon buttons have accessible names", () => {
+    const slider = p.$<HTMLInputElement>('[data-act="speed"]');
+    expect(slider.getAttribute("aria-label")).toBe("Speed");
+    expect(slider.getAttribute("aria-valuetext")).toBe("Normal");
+    slider.value = "5";
+    slider.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(slider.getAttribute("aria-valuetext")).toBe("Fastest");
+    expect(["reset", "prev", "play", "next"].map(a => p.button(a).getAttribute("aria-label"))).toEqual(["Restart", "Back", "Play", "Step"]);
+    p.click("play");
+    expect(p.button("play").getAttribute("aria-label")).toBe("Pause");
+    p.click("play");
+  });
+
+  test("the step note is announced to screen readers", () => {
+    expect(p.$("[data-note]").getAttribute("aria-live")).toBe("polite");
+  });
+
+  test("the current code line is repeated beside the animation", () => {
+    p.click("next"); p.click("next");
+    const line = p.highlightedLine()!;
+    expect(p.$("[data-current-line] .no").textContent).toBe(String(line));
+    expect(p.$("[data-current-line] code").textContent).toBe(mod.code.lines[line - 1].trim());
   });
 
   test("Play switches to Pause, and Pause stops", () => {

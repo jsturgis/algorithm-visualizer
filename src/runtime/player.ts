@@ -31,6 +31,8 @@ export interface PlayerOptions<I> {
 
 export interface Player {
   load(input: unknown): void;
+  /** Redraw for the input fields' current values, paused at step 1. Returns the error message, or null. */
+  applyFields(): string | null;
   play(): void;
   stop(): void;
   destroy(): void;
@@ -46,15 +48,32 @@ export function createPlayer<I>(o: PlayerOptions<I>): Player {
   const controls = q("[data-controls]"), codeBox = q("[data-code]"), noteEl = q("[data-note]"), inputBox = q("[data-input]");
 
   controls.classList.add("controls");
+  // Each button's text is in .btn-label so narrow screens can show the icon alone (aria-label keeps the name).
+  const button = (act: string, icon: string, label: string, title: string, after = false) =>
+    `<button data-act="${act}" type="button" title="${title}" aria-label="${label}">` +
+    (after ? `<span class="btn-label">${label} </span><span aria-hidden="true">${icon}</span>` : `<span aria-hidden="true">${icon}</span><span class="btn-label"> ${label}</span>`) +
+    `</button>`;
   controls.innerHTML = `
-    <button data-act="reset" type="button" title="Restart (R)">⟲ Restart</button>
-    <button data-act="prev" type="button" title="Step back (←)">◀ Back</button>
-    <button data-act="play" type="button" class="primary" title="Play / pause (Space)">▶ Play</button>
-    <button data-act="next" type="button" title="Step forward (→)">Step ▶</button>
-    <label class="speed">Speed <input data-act="speed" type="range" min="1" max="5" value="3"></label>
+    ${button("reset", "⟲", "Restart", "Restart (R)")}
+    ${button("prev", "◀", "Back", "Step back (←)")}
+    ${button("play", "▶", "Play", "Play / pause (Space)").replace("<button", '<button class="primary"')}
+    ${button("next", "▶", "Step", "Step forward (→)", true)}
+    <label class="speed"><span class="btn-label">Speed</span> <input data-act="speed" type="range" min="1" max="5" value="3" aria-label="Speed" aria-valuetext="Normal"></label>
     <span class="progress"></span>`;
   const btn = (a: string) => controls.querySelector(`[data-act="${a}"]`) as HTMLButtonElement;
   const progress = controls.querySelector(".progress")!;
+  const SPEEDS = ["Slowest", "Slow", "Normal", "Fast", "Fastest"];
+  const speed = btn("speed") as unknown as HTMLInputElement;
+  speed.addEventListener("input", () => speed.setAttribute("aria-valuetext", SPEEDS[Number(speed.value) - 1]));
+  const setPlayLabel = (playing: boolean) => {
+    const b = btn("play");
+    b.innerHTML = playing
+      ? `<span aria-hidden="true">❚❚</span><span class="btn-label"> Pause</span>`
+      : `<span aria-hidden="true">▶</span><span class="btn-label"> Play</span>`;
+    b.setAttribute("aria-label", playing ? "Pause" : "Play");
+  };
+  // Optional: the current code line, repeated next to the animation (shown on narrow screens).
+  const currentLine = doc.querySelector<HTMLElement>("[data-current-line]");
 
   codeBox.innerHTML = `
     <div class="code-head"><p class="label">Code</p><div class="code-actions" data-code-actions></div></div>
@@ -67,8 +86,8 @@ export function createPlayer<I>(o: PlayerOptions<I>): Player {
 
   inputBox.classList.add("input-row");
   inputBox.innerHTML = o.fields.map(f =>
-    `<label for="in-${f.id}">${esc(f.label)}</label>
-     <input id="in-${f.id}" type="text" value="${esc(f.value)}" spellcheck="false" class="${f.short ? "short" : ""}">`).join("") +
+    `<span class="field"><label for="in-${f.id}">${esc(f.label)}</label>
+     <input id="in-${f.id}" type="text" value="${esc(f.value)}" spellcheck="false" class="${f.short ? "short" : ""}"></span>`).join("") +
     `<button type="button" data-act="apply">Run</button><span class="err" role="alert"></span>`;
   const readFields = () => Object.fromEntries(o.fields.map(f => [f.id, (doc.getElementById("in-" + f.id) as HTMLInputElement).value]));
 
@@ -84,6 +103,10 @@ export function createPlayer<I>(o: PlayerOptions<I>): Player {
     const s = trace[step];
     const lineNo = o.code.labels[s.line] ?? null;
     lines.forEach(e => e.classList.toggle("on", Number(e.dataset.l) === lineNo));
+    if (currentLine) {
+      currentLine.innerHTML = lineNo === null ? "" :
+        `<span class="no">${lineNo}</span><code>${highlight(o.code.lines[lineNo - 1].trim())}</code>`;
+    }
     o.onLine?.(lineNo);
     o.render(s);
     noteEl.innerHTML = s.note || "";
@@ -98,7 +121,7 @@ export function createPlayer<I>(o: PlayerOptions<I>): Player {
     btn("next").disabled = step === trace.length - 1;
   }
 
-  const delay = () => [1700, 1200, 800, 480, 240][Number((btn("speed") as unknown as HTMLInputElement).value) - 1];
+  const delay = () => [1700, 1200, 800, 480, 240][Number(speed.value) - 1];
   function tick() {
     if (step >= trace.length - 1) { stop(); return; }
     step++; render();
@@ -107,13 +130,13 @@ export function createPlayer<I>(o: PlayerOptions<I>): Player {
   }
   function play() {
     if (step >= trace.length - 1) { step = 0; render(); }
-    btn("play").textContent = "❚❚ Pause";
+    setPlayLabel(true);
     timer = setTimeout(tick, delay());
   }
   function stop() {
     if (timer) clearTimeout(timer);
     timer = null;
-    btn("play").textContent = "▶ Play";
+    setPlayLabel(false);
   }
   const toggle = () => (timer ? stop() : play());
   const go = (k: number) => { stop(); step = Math.max(0, Math.min(trace.length - 1, k)); render(); };
@@ -168,6 +191,10 @@ export function createPlayer<I>(o: PlayerOptions<I>): Player {
     // Typing in the code editor must not drive the player.
     if (t instanceof Element && (t.closest(".cm-editor") || (t as HTMLElement).isContentEditable)) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    // Let focused controls keep their own keys: Space presses a button, link or tab; arrows move a slider.
+    if (e.key === " " && t instanceof Element && t.closest("button, a, [role=tab], input, select, summary")) return;
+    if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && t?.tagName === "INPUT" && t.type === "range") return;
+    if (t instanceof Element && t.closest("select, textarea")) return;
     if (e.key === "ArrowRight") btn("next").click();
     else if (e.key === "ArrowLeft") btn("prev").click();
     else if (e.key === " ") { e.preventDefault(); toggle(); }
@@ -180,6 +207,14 @@ export function createPlayer<I>(o: PlayerOptions<I>): Player {
   load(initial);
   return {
     load: input => load(input as I),
+    applyFields() {
+      clearTimeout(liveTimer);
+      const parsed = parseFields();
+      if (parsed === null) return err.textContent;
+      shown = JSON.stringify(parsed);
+      load(parsed);
+      return null;
+    },
     play,
     stop,
     destroy: () => { stop(); clearTimeout(liveTimer); doc.removeEventListener("keydown", onKey); },

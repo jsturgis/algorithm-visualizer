@@ -54,13 +54,75 @@ header p { margin: 0; color: var(--muted); max-width: 70ch; }
 .tag { font: 500 12px var(--body); padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: var(--panel); }
 .tag.mono { font-family: var(--mono); }
 
-/* The code panel, then the animation under it, at every width. */
-.grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; min-width: 0; }
 .label { font: 600 11px/1 var(--body); letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
 .stage { display: grid; gap: 18px; }
 .stage > *, [data-stage] > * { min-width: 0; }
 [data-stage] { display: grid; gap: 18px; min-width: 0; }
+
+/* Algorithm pages: a workspace. Desktop fills the window: Problem / Code tabs on the left, the animation
+   on the right, each scrolling on its own, and the player's controls in a bar along the bottom.
+   Narrower screens stack the panes and keep the control bar stuck to the bottom of the screen. */
+.wrap.workspace-page { max-width: 1440px; padding-block: 12px; gap: 12px; }
+.page-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.page-head h1 { font-size: clamp(22px, 2.6vw, 30px); margin: 0; }
+.page-head .meta { margin-top: 0; }
+.workspace { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.pane { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.tabs [role="tab"] { padding: 5px 14px; border-radius: 999px; font-size: 13px; }
+.tabs [role="tab"][aria-selected="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.tab-panel .code-head { justify-content: flex-end; }
+.tab-panel .code-head .label { display: none; }   /* the Code tab already names it */
+.control-bar { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; }
+/* Smaller array boxes when the animation pane is narrow, so a 10-item strip still fits without scrolling. */
+.pane-right { container-type: inline-size; }
+@container (max-width: 620px) {
+  .pane-right .box { width: 40px; height: 40px; font-size: 15px; border-radius: 7px; }
+  .pane-right .spacer { width: 40px; }   /* K Radius's alignment column matches the box width */
+  .pane-right .strip { gap: 6px; }
+}
+@container (max-width: 460px) {
+  /* Fits 11 columns (K Radius: a spacer + prefix's n + 1 cells) in a phone-width pane. */
+  .pane-right .box { width: 27px; height: 27px; font-size: 11px; border-width: 1.5px; border-radius: 5px; }
+  .pane-right .spacer { width: 27px; }
+  .pane-right .strip { gap: 3px; }
+  .pane-right .idx { font-size: 10px; }
+}
+/* Phones: one row of icon buttons in the control bar. */
+@media (max-width: 600px) {
+  .control-bar { padding: 8px 10px; }
+  .control-bar .btn-label { display: none; }
+  .control-bar.controls { flex-wrap: nowrap; gap: 6px; }
+  .control-bar button { padding: 8px 12px; }
+  .control-bar button.primary { min-width: 48px; }
+  .control-bar .speed input { width: 72px; }
+  .control-bar .progress { font-size: 12px; white-space: nowrap; }
+}
+
+.input-row .field { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+/* The current code line, repeated above the animation on narrow screens (desktop shows the code beside it). */
+.current-line { display: none; margin: 0; font: 13px/1.6 var(--mono); background: var(--hl); border-left: 3px solid var(--fg); border-radius: 6px; padding: 6px 10px; overflow-x: auto; white-space: pre; }
+.current-line:empty { display: none !important; }
+.current-line .no { color: var(--muted); margin-right: 10px; }
+.current-line code { font: inherit; }
+
+@media (min-width: 1024px) {
+  /* Keep the tabs and the code actions (Edit, Run tests, Reset) in view while the left pane scrolls. */
+  .pane-left .tabs { position: sticky; top: -16px; z-index: 3; background: var(--panel); margin: -16px -16px 14px; padding: 16px 16px 8px; }
+  .pane-left .code-head { position: sticky; top: 38px; z-index: 2; background: var(--panel); margin-inline: -16px; padding: 4px 16px 8px; }
+  .wrap.workspace-page { height: 100dvh; box-sizing: border-box; padding-block: 12px; grid-template-rows: auto auto minmax(0, 1fr); }
+  .workspace { grid-template-columns: minmax(420px, 5fr) minmax(0, 6fr); grid-template-rows: minmax(0, 1fr) auto; min-height: 0; }
+  .pane { overflow: auto; min-height: 0; }
+  .control-bar { grid-column: 1 / -1; }
+}
+@media (max-width: 1023px) {
+  /* The animation first, with the current code line above it, so Play shows what's happening. */
+  .pane-right { order: -1; }
+  .pane { padding: 12px; }
+  .current-line { display: block; }
+  .control-bar { position: sticky; bottom: 0; z-index: 5; border-radius: 10px 10px 0 0; box-shadow: 0 -6px 16px rgb(0 0 0 / .08); }
+}
 
 /* Array strip */
 .strip-scroll { overflow-x: auto; padding-block: 8px 2px; }
@@ -138,8 +200,8 @@ input[type=text], input[type=search] { font-family: var(--mono); background: var
 input.short { width: min(90px, 100%); }
 .err { color: var(--low); font-size: 13px; }
 
-/* Problem statement */
-.statement summary { cursor: pointer; font: 700 18px var(--display); }
+/* Problem statement (the Problem tab) */
+.statement h3:first-child { margin-top: 0; }
 .statement h3 { font: 600 11px/1 var(--body); letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 22px 0 10px; }
 .statement p, .statement li { max-width: 75ch; }
 .statement pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; font: 13px/1.6 var(--mono); margin: 0 0 10px; white-space: pre-wrap; overflow-wrap: anywhere; }

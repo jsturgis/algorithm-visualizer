@@ -135,7 +135,11 @@ export function createChecker(contract: Contract, libs: Record<string, string>):
     if (category === "type" && d.code >= 1000 && d.code < 2000) category = "syntax";
     let from = d.start ?? 0, to = from + (d.length ?? 0);
     let message = flatten(d.messageText);
-    if (from >= source.length) {
+    if (from >= source.length && category === "syntax") {
+      // A syntax error at the very end (e.g. a missing "}"): TypeScript notices it in the hidden contract that
+      // follows the learner's code. It's still a syntax error; report it at the end of their code.
+      from = to = source.length;
+    } else if (from >= source.length) {
       // The error is in the hidden contract: report it on the learner's code instead.
       category = "contract";
       const at = entryOffset();

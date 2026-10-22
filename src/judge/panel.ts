@@ -79,7 +79,12 @@ export function renderProgress(el: HTMLElement, p: Progress | null, onCancel: ()
   cancel.onclick = onCancel;
 }
 
-export function renderVerdict(el: HTMLElement, v: Verdict, contract: Contract) {
+export interface VerdictOptions {
+  /** Animate a failing test's input on the page. Returns an error message when it can't. */
+  onStepThrough?: (input: Input) => string | null;
+}
+
+export function renderVerdict(el: HTMLElement, v: Verdict, contract: Contract, opts: VerdictOptions = {}) {
   el.hidden = false;
   el.innerHTML = "";
   const kind = { Accepted: "accepted", WrongAnswer: "wrong", TimeLimitExceeded: "tle", RuntimeError: "rte", CompileError: "compile", Cancelled: "cancelled" }[v.kind];
@@ -137,6 +142,23 @@ export function renderVerdict(el: HTMLElement, v: Verdict, contract: Contract) {
     case "Cancelled":
       summary.textContent = `Stopped after ${plural(v.passed, "test")} of ${num(v.total)}.`;
       break;
+  }
+  // The most useful next step after a failure: watch the correct algorithm on the failing input.
+  const failing = (v.kind === "WrongAnswer" || v.kind === "TimeLimitExceeded" || v.kind === "RuntimeError") ? v.input : null;
+  if (failing && opts.onStepThrough) {
+    const b = el.appendChild(document.createElement("button"));
+    b.type = "button";
+    b.dataset.judge = "step-through";
+    b.textContent = "Step through this input";
+    b.title = "Show this test's input in the animation (the reference solution)";
+    const note = el.appendChild(document.createElement("p"));
+    note.className = "step-through-note";
+    note.hidden = true;
+    b.onclick = () => {
+      const problem = opts.onStepThrough!(failing);
+      note.hidden = false;
+      note.textContent = problem ?? "The animation now shows this input, stepping through the reference solution. Press Play or Step.";
+    };
   }
   if (v.kind !== "CompileError" && v.typeErrors) {
     const note = el.appendChild(document.createElement("p"));

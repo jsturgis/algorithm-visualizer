@@ -38,6 +38,8 @@ export interface EditingOptions {
   loadJudge?: () => Promise<typeof Panel>;
   /** Reloads the page (tests replace it). */
   reload?: () => void;
+  /** Animate a failing test's input. Returns an error message when it can't. */
+  stepThrough?: (input: Record<string, unknown>) => string | null;
 }
 
 export interface Editing {
@@ -224,8 +226,9 @@ export function attachEditing(o: EditingOptions): Editing {
         onProgress: p => panel!.renderProgress(verdictEl, p, cancel),
       });
       runner.dispose();
-      panel.renderVerdict(verdictEl, verdict, o.contract);
+      panel.renderVerdict(verdictEl, verdict, o.contract, { onStepThrough: o.stepThrough });
       ranText = normalize(source);
+      verdictEl.scrollIntoView?.({ block: "nearest" });
       return verdict;
     } catch (e) {
       verdictEl.hidden = false;
@@ -305,6 +308,11 @@ export function attachEditing(o: EditingOptions): Editing {
     confirmBox.hidden = true;
     editor?.setText(reference);
     clearTimeout(saveTimer);
+    // The old verdict was about the discarded code.
+    verdictEl.hidden = true;
+    verdictEl.textContent = "";
+    delete verdictEl.dataset.verdict;
+    ranText = null;
     try { storage?.removeItem(key); } catch { /* nothing saved */ }
     syncHighlight();
   };
@@ -324,7 +332,7 @@ export function attachEditing(o: EditingOptions): Editing {
   };
 }
 
-function safeLocalStorage(): Storage | null {
+export function safeLocalStorage(): Storage | null {
   try {
     const s = window.localStorage;
     const probe = "algorithm-visualizer:probe";

@@ -40,6 +40,13 @@ describe("diagnostics", () => {
     expect(first.column).toBeGreaterThan(1);
   });
 
+  test("a missing closing brace is one syntax error at the end, not a contract error", () => {
+    const src = reference.replace(/\}\s*$/, "");
+    const found = checker.diagnostics(src);
+    expect(found.map(d => d.category)).toEqual(["syntax"]);
+    expect(found[0]).toMatchObject({ from: src.length, message: "'}' expected." });
+  });
+
   test("only syntax errors are reported until the code parses", () => {
     expect(checker.diagnostics(edit("for (let i = k;", "for (let i = k")).every(d => d.category === "syntax")).toBe(true);
   });

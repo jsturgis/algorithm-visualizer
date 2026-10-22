@@ -1,7 +1,7 @@
 /* The code editor. Colours come from the site's tokens, so it follows light and dark themes. */
 .editor .cm-editor { background: var(--code-bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; font: 13px/1.7 var(--mono); }
 .editor .cm-editor.cm-focused { outline: 2px solid var(--curve); outline-offset: 2px; }
-.editor .cm-scroller { font: inherit; min-height: 180px; max-height: 70vh; }
+.editor .cm-scroller { font: inherit; min-height: 180px; }   /* the pane scrolls, not the editor */
 .editor .cm-content { caret-color: var(--fg); padding-block: 10px; }
 .editor .cm-cursor { border-left-color: var(--fg); }
 .editor .cm-gutters { background: var(--code-bg); color: var(--muted); border-right: none; border-radius: 8px 0 0 8px; }

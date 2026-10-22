@@ -60,6 +60,15 @@ For every package, including the template:
 
 `npm run verify` also writes the generated tests to `data/secret/` (gitignored) so you can review them like a checked-in package.
 
+## Page layout
+
+On desktop (1024 px and wider), an algorithm page is a workspace that fills the window:
+- **Left pane:** **Problem** and **Code** tabs. Problem holds the approach, statement, examples and constraints. Code holds the code, the variable cards and edit mode. The first visit to an algorithm opens on Problem; after that, the page remembers the last tab per algorithm.
+- **Right pane:** the animation, its step explanation and the input row.
+- **Control bar:** Play, Step, Back, Restart and speed, along the bottom.
+
+Each pane scrolls on its own, so the highlighted code line, the animation and the controls stay on screen together. On narrower screens the panes stack, and the control bar sticks to the bottom of the screen.
+
 ## Editing code on a page
 
 The code panel's **Edit** button opens the accepted solution in an editor (CodeMirror 6) with TypeScript diagnostics, autocomplete and hover types. The code is checked against the problem's contract: the entry function must keep its name, accept the `input` types from `problem.yaml` (`int` → `number`, `int[]` → `number[]`) and return its `returns` type. Edits are saved per algorithm in the browser. The animation always follows the reference solution, so line highlighting is turned off while the edited code differs from it.
