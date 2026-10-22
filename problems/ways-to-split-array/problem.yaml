@@ -1,0 +1,19 @@
+title: Number of Ways to Split Array
+summary: Keep a running sum of the left part; the right part's sum is the total minus it.
+explanation: >-
+  For each split point you need the sum of the left part and of the right part. Recomputing both is
+  `O(n)` per split. Instead compute the total once, then walk left to right keeping a running sum of
+  the left part (a prefix sum); the right part's sum is `total − left`. Every split is checked in
+  `O(1)`.
+source: LeetCode 2270
+tags: [Arrays, Prefix sum]
+complexity: { time: O(n), space: O(1) }
+entry: waysToSplitArray
+limits: { time_ms: 100 }
+input:
+  - { name: nums, type: "int[]", length: [2, 100000], value: [-100000, 100000] }
+returns: int
+visualization:
+  default: { nums: [10, 4, -8, 7] }
+  limits:
+    nums: { length: [2, 12], value: [-99, 99] }

@@ -1,0 +1,18 @@
+title: Running Sum of 1d Array
+summary: Each running total is the previous one plus the next number; the basic prefix sum.
+explanation: >-
+  The running sum at index `i` is the sum of everything up to and including `nums[i]`. That's just the
+  previous running sum plus `nums[i]`, so one pass builds the whole array. This array is a **prefix
+  sum**, the building block for answering "sum of a range" questions in `O(1)` later.
+source: LeetCode 1480
+tags: [Arrays, Prefix sum]
+complexity: { time: O(n), space: O(n) }
+entry: runningSum
+limits: { time_ms: 100 }
+input:
+  - { name: nums, type: "int[]", length: [1, 100000], value: [-1000000, 1000000] }
+returns: "int[]"
+visualization:
+  default: { nums: [3, 1, 2, 10, 1] }
+  limits:
+    nums: { length: [1, 12], value: [-99, 99] }
