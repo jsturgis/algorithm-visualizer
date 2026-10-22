@@ -1,12 +1,13 @@
 // Wires one algorithm package (from the build) into the page shell rendered by build/render.ts.
 import "../styles/base.css";
 import { checkInput, formatField, parseField, withLimits } from "./constraints.ts";
-import { attachEditing, type Editing, type EditingOptions } from "./editing.ts";
+import { attachEditing, safeLocalStorage, type Editing, type EditingOptions } from "./editing.ts";
 import { createPlayer, type Player } from "./player.ts";
+import { attachTabs, type Tabs } from "./tabs.ts";
 import { BROWSER_TIME_MULTIPLIER, contractOf, type AlgorithmModule, type Input } from "./types.ts";
 
 export type MountOptions = Pick<EditingOptions, "storage" | "loadEditor" | "checker" | "debounceMs" | "runner" | "loadJudge">;
-export type MountedPage = Player & { editing: Editing };
+export type MountedPage = Player & { editing: Editing; tabs: Tabs };
 
 export function mountAlgorithm(mod: AlgorithmModule, doc: Document = document, opts: MountOptions = {}): MountedPage {
   const { meta, code, view } = mod;
@@ -45,8 +46,12 @@ export function mountAlgorithm(mod: AlgorithmModule, doc: Document = document, o
     onLine: n => { line = n; editing?.setLine(n); },
   });
 
+  const storage = opts.storage === undefined ? safeLocalStorage() : opts.storage;
+  const tabs = attachTabs({ doc, slug: meta.slug, storage });
+
   editing = attachEditing({
     ...opts,
+    storage,
     doc,
     panel: doc.querySelector<HTMLElement>("[data-code]")!,
     slug: meta.slug,
@@ -60,6 +65,7 @@ export function mountAlgorithm(mod: AlgorithmModule, doc: Document = document, o
   return {
     ...player,
     editing,
+    tabs,
     destroy: () => { player.destroy(); editing?.destroy(); },
   };
 }

@@ -21,15 +21,23 @@ describe.each(Object.values(modules))("$meta.title page", mod => {
     expect(p.$("[data-code]").textContent).not.toContain("@line");
   });
 
-  test("includes the statement, every sample and the constraints", () => {
-    const statement = p.$(".statement").textContent!;
-    expect(statement).toContain("Example 1");
-    for (const param of mod.meta.input) expect(statement).toContain(param.name);
-    if (mod.meta.source) expect(statement).toContain(mod.meta.source);
+  test("the Problem tab has the approach, statement, every sample and the constraints", () => {
+    const problem = p.$('[data-tab-panel="problem"]').textContent!;
+    expect(problem).toContain("Approach");
+    expect(problem).toContain("Example 1");
+    for (const param of mod.meta.input) expect(problem).toContain(param.name);
+    if (mod.meta.source) expect(problem).toContain(mod.meta.source);
   });
 
-  test("puts the controls first, then the code panel, then the animation", () => {
-    const order = [p.$("[data-controls]"), p.$("[data-code]"), p.$(".stage")];
+  test("is a workspace: Problem / Code tabs on the left, the animation on the right, controls in a bar", () => {
+    const left = p.$(".pane-left"), right = p.$(".pane-right");
+    expect(left.querySelector('[data-tab-panel="code"] [data-code]')).not.toBeNull();
+    expect(left.querySelector('[data-tab-panel="code"] [data-edit="toggle"]')).not.toBeNull();   // Edit lives in the Code tab
+    for (const sel of ["[data-stage]", "[data-note]", "[data-input]"]) expect(right.querySelector(sel), sel).not.toBeNull();
+    expect(p.$(".control-bar").matches("[data-controls]")).toBe(true);
+    expect(p.$(".control-bar").querySelector('[data-act="play"]')).not.toBeNull();
+    // Reading order matches the layout: left pane, right pane, then the control bar.
+    const order = [left, right, p.$(".control-bar")];
     for (let i = 1; i < order.length; i++) {
       expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }

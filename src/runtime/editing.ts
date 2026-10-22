@@ -289,7 +289,7 @@ export function attachEditing(o: EditingOptions): Editing {
   };
 }
 
-function safeLocalStorage(): Storage | null {
+export function safeLocalStorage(): Storage | null {
   try {
     const s = window.localStorage;
     const probe = "algorithm-visualizer:probe";

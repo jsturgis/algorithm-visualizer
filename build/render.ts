@@ -25,35 +25,46 @@ export function renderBody(pkg: Package): string {
       <pre>Input: ${esc(meta.input.map(p => `${p.name} = ${show(t.input[p.name])}`).join(", "))}
 Output: ${esc(show(t.answer))}</pre>`).join("");
 
+  // Desktop: a workspace that fills the window — tabs (Problem / Code) on the left, the animation on the
+  // right, each scrolling on its own, and the player's controls in a bar along the bottom. Phones stack.
   return `
-<div class="wrap">
+<div class="wrap workspace-page">
   <nav class="topbar"><a class="brand" href="../../">Algorithms, step by step</a><a href="../../">← All algorithms</a></nav>
 
-  <header>
+  <header class="page-head">
     <h1>${esc(meta.title)}</h1>
-    <p>${marked.parseInline(meta.explanation)}</p>
     <div class="meta">${meta.tags.map(t => `<span class="tag">${esc(t)}</span>`).join("")}<span class="tag mono">${esc(meta.complexity.time)} time</span><span class="tag mono">${esc(meta.complexity.space)} space</span></div>
   </header>
 
-  <div class="panel" data-controls></div>
+  <main class="workspace">
+    <section class="pane pane-left" aria-label="Problem and code">
+      <div class="tabs" role="tablist" aria-label="Problem and code">
+        <button type="button" role="tab" id="tab-problem" data-tab="problem" aria-controls="panel-problem">Problem</button>
+        <button type="button" role="tab" id="tab-code" data-tab="code" aria-controls="panel-code">Code</button>
+      </div>
+      <div class="tab-panel statement" role="tabpanel" id="panel-problem" data-tab-panel="problem" aria-labelledby="tab-problem">
+        <h3>Approach</h3>
+        <p>${marked.parseInline(meta.explanation)}</p>
+        <h3>Problem</h3>
+        ${marked.parse(pkg.statement)}
+        <h3>Examples</h3>${examples}
+        <h3>Constraints</h3>
+        <ul>${[...constraintLines(meta.input), ...meta.constraints_note].map(c => `<li>${marked.parseInline(c)}</li>`).join("")}</ul>
+        ${meta.source ? `<p class="source">Source: ${esc(meta.source)}</p>` : ""}
+      </div>
+      <div class="tab-panel" role="tabpanel" id="panel-code" data-tab-panel="code" aria-labelledby="tab-code">
+        <div data-code></div>
+      </div>
+    </section>
 
-  <div class="grid">
-    <div class="panel" data-code></div>
-    <div class="panel stage">
+    <section class="pane pane-right stage" aria-label="Animation">
       <div data-stage></div>
       <p class="note" data-note></p>
       <div data-input></div>
-    </div>
-  </div>
+    </section>
 
-  <details class="panel statement">
-    <summary>Problem statement</summary>
-    ${marked.parse(pkg.statement)}
-    <h3>Examples</h3>${examples}
-    <h3>Constraints</h3>
-    <ul>${[...constraintLines(meta.input), ...meta.constraints_note].map(c => `<li>${marked.parseInline(c)}</li>`).join("")}</ul>
-    ${meta.source ? `<p class="source">Source: ${esc(meta.source)}</p>` : ""}
-  </details>
+    <div class="control-bar" data-controls></div>
+  </main>
 </div>`;
 }
 
