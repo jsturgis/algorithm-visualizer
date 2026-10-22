@@ -63,3 +63,35 @@ describe("Problem / Code tabs", () => {
     expect(showing().selected).toEqual(["problem"]);   // arrows don't switch tabs
   });
 });
+
+describe("the optional Analogy tab", () => {
+  test("K Radius has Problem, Analogy and Code tabs, in that order, with the analogy text", () => {
+    p = mountPage(mod, { storage: new MemoryStorage() });
+    expect(p.texts('[role="tab"]')).toEqual(["Problem", "Analogy", "Code"]);
+    tab("analogy").click();
+    expect(p.player.tabs.current()).toBe("analogy");
+    expect(panel("analogy").hidden).toBe(false);
+    expect(panel("problem").hidden).toBe(true);
+    expect(panel("code").hidden).toBe(true);
+    expect(panel("analogy").textContent).toContain("odometer");
+    expect(panel("analogy").getAttribute("aria-labelledby")).toBe("tab-analogy");
+  });
+
+  test("the Analogy tab is remembered like the others", () => {
+    const storage = new MemoryStorage();
+    p = mountPage(mod, { storage });
+    tab("analogy").click();
+    p = mountPage(mod, { storage });
+    expect(p.player.tabs.current()).toBe("analogy");
+  });
+
+  test("pages without an analogy keep two tabs, and a remembered Analogy falls back to Problem", () => {
+    const storage = new MemoryStorage();
+    storage.setItem("algorithm-visualizer:tab:binary-search", "analogy");
+    p = mountPage(modules["binary-search"], { storage });
+    expect(p.texts('[role="tab"]')).toEqual(["Problem", "Code"]);
+    expect(p.$('[data-tab-panel="analogy"]')).toBeNull();
+    expect(p.player.tabs.current()).toBe("problem");
+  });
+});
+

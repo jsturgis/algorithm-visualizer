@@ -25,6 +25,7 @@ problems/k-radius-averages/
   problem.yaml                          title, tags, complexity, entry function, input constraints,
                                         return type, time limit, visualization settings
   problem_statement/statement.md
+  problem_statement/analogy.md          optional: an everyday analogy, shown in an Analogy tab
   data/sample/1.in, 1.ans               examples, as JSON: the input object / the expected answer
   data/invalid_input/*.in               inputs the validator must reject
   generators/generators.ts              random (a fast-check arbitrary), edge (named cases),
@@ -74,7 +75,7 @@ For every package, including the template:
 ## Page layout
 
 On desktop (1024 px and wider), an algorithm page is a workspace that fills the window:
-- **Left pane:** **Problem** and **Code** tabs. Problem holds the approach, statement, examples and constraints. Code holds the code, the variable cards and edit mode. The first visit to an algorithm opens on Problem; after that, the page remembers the last tab per algorithm.
+- **Left pane:** **Problem** and **Code** tabs, plus an **Analogy** tab when the package has `problem_statement/analogy.md`. Problem holds the approach, statement, examples and constraints. Code holds the code, the variable cards and edit mode. The first visit to an algorithm opens on Problem; after that, the page remembers the last tab per algorithm.
 - **Right pane:** the animation, its step explanation and the input row.
 - **Control bar:** Play, Step, Back, Restart and speed, along the bottom.
 

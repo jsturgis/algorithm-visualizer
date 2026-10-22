@@ -42,7 +42,8 @@ Output: ${esc(show(t.answer))}</pre>`).join("");
   <main class="workspace">
     <section class="pane pane-left" aria-label="Problem and code">
       <div class="tabs" role="tablist" aria-label="Problem and code">
-        <button type="button" role="tab" id="tab-problem" data-tab="problem" aria-controls="panel-problem">Problem</button>
+        <button type="button" role="tab" id="tab-problem" data-tab="problem" aria-controls="panel-problem">Problem</button>${pkg.analogy ? `
+        <button type="button" role="tab" id="tab-analogy" data-tab="analogy" aria-controls="panel-analogy">Analogy</button>` : ""}
         <button type="button" role="tab" id="tab-code" data-tab="code" aria-controls="panel-code">Code</button>
       </div>
       <div class="tab-panel statement" role="tabpanel" id="panel-problem" data-tab-panel="problem" aria-labelledby="tab-problem">
@@ -55,7 +56,11 @@ Output: ${esc(show(t.answer))}</pre>`).join("");
         <ul>${[...constraintLines(meta.input), ...meta.constraints_note].map(c => `<li>${marked.parseInline(c)}</li>`).join("")}</ul>
         ${meta.source ? `<p class="source">Source: ${esc(meta.source)}</p>` : ""}
       </div>
-      <div class="tab-panel" role="tabpanel" id="panel-code" data-tab-panel="code" aria-labelledby="tab-code">
+${pkg.analogy ? `      <div class="tab-panel statement analogy" role="tabpanel" id="panel-analogy" data-tab-panel="analogy" aria-labelledby="tab-analogy">
+        <h3>Analogy</h3>
+        ${marked.parse(pkg.analogy)}
+      </div>
+` : ""}      <div class="tab-panel" role="tabpanel" id="panel-code" data-tab-panel="code" aria-labelledby="tab-code">
         <div data-code></div>
       </div>
     </section>
