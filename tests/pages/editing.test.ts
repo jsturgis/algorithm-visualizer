@@ -116,6 +116,14 @@ describe("edit mode", () => {
     expect(status()).not.toMatch(/highlighting is off/);
   });
 
+  test("the editor highlights every line of a multi-line step", async () => {
+    const { default: reverse } = await import("virtual:algorithm/reverse-string");
+    p = mountPage(reverse, { storage });
+    await openEditor();
+    p.until(() => p.note().startsWith("Move both pointers"));
+    expect(p.$$(".cm-step-line").map(l => l.textContent!.trim())).toEqual(["left++;", "right--;"]);
+  });
+
   test("whitespace-only differences still count as the reference", async () => {
     await openEditor();
     editor().setText(reference.split("\n").map(l => l + "   ").join("\r\n") + "\n\n");

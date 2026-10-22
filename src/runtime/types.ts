@@ -53,7 +53,7 @@ export const signatureOf = (c: Contract) => `${c.entry}(${c.params.map(p => `${p
 
 /** One snapshot in a visualization trace. */
 export interface Step {
-  /** A `// @line <label>` label from the accepted solution; that line is highlighted. */
+  /** A `// @line <label>` label from the accepted solution; every line with that label is highlighted. */
   line: string;
   /** HTML explaining this step. */
   note: string;
@@ -87,7 +87,8 @@ export interface View<I = any, S extends Step = any> {
 /** The accepted solution as displayed: lines with `// @line` markers removed, and label → 1-based line number. */
 export interface Code {
   lines: string[];
-  labels: Record<string, number>;
+  /** Label → its 1-based line numbers. A label on several lines highlights them together (e.g. `left++; right--;`). */
+  labels: Record<string, number[]>;
 }
 
 export interface ProblemMeta {

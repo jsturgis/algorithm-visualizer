@@ -231,3 +231,25 @@ function editsFor(param: { type: string; value?: [number, number] }, value: unkn
       throw new Error(`No edits for input type ${param.type}`);
   }
 }
+
+describe("steps that run several lines at once", async () => {
+  const { default: reverse } = await import("virtual:algorithm/reverse-string");
+  const { buildTrace } = await import("../../problems/reverse-string/visualization/trace.ts");
+
+  test("highlight the whole block in the code panel and the current-line strip", () => {
+    const p = mountPage(reverse);
+    p.until(() => p.note().startsWith("Move both pointers"));
+    const lines = p.highlightedLines();
+    expect(lines.map(n => reverse.code.lines[n - 1].trim())).toEqual(["left++;", "right--;"]);
+    expect(p.$$("[data-current-line] code").map(c => c.textContent)).toEqual(["left++;", "right--;"]);
+    p.player.destroy();
+  });
+
+  test("Reverse String swaps in three visible steps, so the temporary copy shows", () => {
+    const steps = buildTrace({ s: ["a", "b"] });
+    expect(steps.map(s => s.line)).toEqual(["init", "loop", "save", "put-right", "put-temp", "move", "loop", "return"]);
+    expect(steps.find(s => s.line === "put-right")!.s).toEqual(["b", "b"]);   // both slots briefly hold "b"
+    expect(steps.find(s => s.line === "put-temp")!.s).toEqual(["b", "a"]);
+  });
+});
+

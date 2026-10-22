@@ -13,7 +13,7 @@ const view: View<Input, ReverseStep> = {
       <div class="strip-scroll"><div class="strip" id="s"></div></div>
     </div>`,
 
-  vars: [{ key: "left" }, { key: "right" }, { key: "s[left]", tone: "curve" }, { key: "s[right]", tone: "curve" }],
+  vars: [{ key: "left" }, { key: "right" }, { key: "s[left]", tone: "curve" }, { key: "s[right]", tone: "curve" }, { key: "temp", tone: "goal" }],
 
   setup(root, input) {
     strip = root.querySelector<HTMLElement>("#s")!;

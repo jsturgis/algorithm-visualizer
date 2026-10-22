@@ -25,8 +25,8 @@ export interface PlayerOptions<I> {
   buildTrace(input: I): Step[];
   setup(input: I): void;
   render(step: Step): void;
-  /** Called on every step with the highlighted code line (1-based), or null. */
-  onLine?(line: number | null): void;
+  /** Called on every step with the highlighted code lines (1-based); empty when none. */
+  onLine?(lines: number[]): void;
 }
 
 export interface Player {
@@ -101,13 +101,13 @@ export function createPlayer<I>(o: PlayerOptions<I>): Player {
 
   function render() {
     const s = trace[step];
-    const lineNo = o.code.labels[s.line] ?? null;
-    lines.forEach(e => e.classList.toggle("on", Number(e.dataset.l) === lineNo));
+    const on = o.code.labels[s.line] ?? [];
+    lines.forEach(e => e.classList.toggle("on", on.includes(Number(e.dataset.l))));
     if (currentLine) {
-      currentLine.innerHTML = lineNo === null ? "" :
-        `<span class="no">${lineNo}</span><code>${highlight(o.code.lines[lineNo - 1].trim())}</code>`;
+      currentLine.innerHTML = on.map(n =>
+        `<span class="cl-line"><span class="no">${n}</span><code>${highlight(o.code.lines[n - 1].trim())}</code></span>`).join("");
     }
-    o.onLine?.(lineNo);
+    o.onLine?.(on);
     o.render(s);
     noteEl.innerHTML = s.note || "";
     const vals = s.vars ?? {};

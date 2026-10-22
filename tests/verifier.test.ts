@@ -79,7 +79,8 @@ describe("verifier", () => {
 
   test("catches a trace that points at a line label the solution doesn't have", async () => {
     const failed = await failures(dir => replaceIn(path.join(dir, "submissions/accepted/solution.ts"), "// @line compare", ""));
-    expect(failed).toEqual(["trace highlights real lines and ends with the solution's answer"]);
+    // Removing the label also leaves that line unhighlightable, which the newer check reports too.
+    expect(failed).toEqual(["every line of the solution can be highlighted", "trace highlights real lines and ends with the solution's answer"]);
   });
 
   test("catches a problem.yaml return type that the accepted solution doesn't match", async () => {
@@ -94,6 +95,11 @@ describe("verifier", () => {
 
   test("rejects constraints that don't fit the input's type", async () => {
     await expect(failures(dir => replaceIn(path.join(dir, "problem.yaml"), 'value: [-1000000, 1000000] }', 'value: [-1000000, 1000000], chars: "[a-z]" }'))).rejects.toThrow(/chars is only for string and string\[\]/);
+  });
+
+  test("catches a solution line that can never be highlighted", async () => {
+    const failed = await failures(dir => replaceIn(path.join(dir, "submissions/accepted/solution.ts"), "return best; // @line return", "const answer = best;\n    return answer; // @line return"));
+    expect(failed).toEqual(["every line of the solution can be highlighted"]);
   });
 
   test("rejects a problem.yaml that doesn't match the schema", async () => {

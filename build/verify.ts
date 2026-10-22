@@ -112,6 +112,17 @@ export async function verifyPackage(pkg: Package): Promise<Check[]> {
     return signatureOf(contract);
   });
 
+  await check("every line of the solution can be highlighted", () => {
+    // A line with no @line label is never highlighted, so the animation skips it silently.
+    // Only the signature, braces, `} else {`, comments and blank lines may go unlabeled.
+    const labelled = new Set(Object.values(pkg.code.labels).flat());
+    const structural = /^\s*(\{|\}|\}\s*else\s*\{|\/\/.*)?\s*$/;
+    const missing = pkg.code.lines
+      .map((text, i) => ({ n: i + 1, text }))
+      .filter(l => l.n > 1 && !labelled.has(l.n) && !structural.test(l.text));
+    if (missing.length) throw new Error(missing.map(l => `line ${l.n} has no @line label: ${l.text.trim()}`).join("\n"));
+  });
+
   await check("input validator accepts every test input", () => {
     const large = suite.large.map(t => ({ name: t.name, input: t.make() }));
     for (const t of [...suite.corpus, ...large]) {

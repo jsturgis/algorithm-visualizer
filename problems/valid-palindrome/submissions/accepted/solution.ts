@@ -3,7 +3,7 @@ export function isPalindrome(s: string): boolean {
     while (left < right) { // @line loop
         if (s[left] !== s[right]) return false; // @line compare
         left++; // @line move
-        right--;
+        right--; // @line move
     }
     return true; // @line return
 }

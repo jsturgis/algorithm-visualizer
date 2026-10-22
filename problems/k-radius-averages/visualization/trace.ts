@@ -48,6 +48,7 @@ export function buildTrace({ nums, k }: Input): KRadiusStep[] {
   }
 
   for (i = k; i < n - k; i++) {
+    snap({ line: "slide", center: i, note: `Next center: <b>i = ${i}</b>. Its window is nums[${i - k}..${i + k}].` });
     const lo = i - k, hi = i + k;
     windowText = `${lo}–${hi}`; avg = null;
     sum = P[hi + 1] - P[lo];
@@ -60,7 +61,9 @@ export function buildTrace({ nums, k }: Input): KRadiusStep[] {
       sumText: `${sum} / ${size} = ${frac(sum, size)} → ${avg}`,
       note: `<b>avgs[${i}] = ⌊${sum} / ${size}⌋ = ${avg}</b>` });
   }
-  i = null; sum = null; avg = null; windowText = null;
+  windowText = null; sum = null; avg = null;
+  snap({ line: "slide", note: `<b>i = ${i} = n − k</b>: the next center wouldn't have ${k} numbers after it, so there are no more full windows.` });
+  i = null;
   snap({ line: "return", result: avgs.slice(), note: `Done. Building prefix took one pass, and each average took one subtraction, so this is <b>O(n)</b> no matter how big k is.` });
   return T;
 }

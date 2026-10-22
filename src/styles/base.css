@@ -105,6 +105,7 @@ header p { margin: 0; color: var(--muted); max-width: 70ch; }
 .current-line { display: none; margin: 0; font: 13px/1.6 var(--mono); background: var(--hl); border-left: 3px solid var(--fg); border-radius: 6px; padding: 6px 10px; overflow-x: auto; white-space: pre; }
 .current-line:empty { display: none !important; }
 .current-line .no { color: var(--muted); margin-right: 10px; }
+.current-line .cl-line { display: block; }
 .current-line code { font: inherit; }
 
 @media (min-width: 1024px) {

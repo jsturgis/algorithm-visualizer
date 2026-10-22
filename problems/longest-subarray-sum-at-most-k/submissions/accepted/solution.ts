@@ -4,7 +4,7 @@ export function longestSubarray(nums: number[], k: number): number {
         sum += nums[right]; // @line add
         while (sum > k) { // @line too-big
             sum -= nums[left]; // @line shrink
-            left++;
+            left++; // @line shrink
         }
         best = Math.max(best, right - left + 1); // @line best
     }
