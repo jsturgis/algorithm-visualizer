@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 // Behaviour every algorithm page gets from the shared player and page shell. Runs once per package.
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import modules from "virtual:all-algorithms";
+import { LIVE_INPUT_DELAY_MS } from "../../src/runtime/player.ts";
 import { mountPage, type Page } from "./helpers.ts";
 
 describe.each(Object.values(modules))("$meta.title page", mod => {
@@ -91,6 +92,46 @@ describe.each(Object.values(modules))("$meta.title page", mod => {
     p.run({});
     expect(p.error()).toBe("");
     expect(p.progress()[0]).toBe(1);
+  });
+
+  describe("typing in the input fields", () => {
+    const first = mod.meta.input[0];
+    const field = () => p.$<HTMLInputElement>(`#in-${first.name}`);
+    const type = (value: string) => {
+      field().value = value;
+      field().dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    // A different valid value for the first field: the default list without its last number.
+    const shorter = () => (mod.meta.visualization.default[first.name] as number[]).slice(0, -1);
+    const expectedSteps = (value: number[]) => {
+      let input = { ...mod.meta.visualization.default, [first.name]: value };
+      if (mod.view.prepare) input = mod.view.prepare(input);
+      return mod.buildTrace(input).length;
+    };
+
+    test("redraws the animation for a valid new input without clicking Run, paused at step 1", async () => {
+      p.click("next"); p.click("next");
+      const value = shorter();
+      type(value.join(", "));
+      await vi.waitFor(() => expect(p.progress()).toEqual([1, expectedSteps(value)]));
+      expect(p.button("play").textContent).toContain("Play");
+      expect(p.error()).toBe("");
+    });
+
+    test("shows the error for invalid input and keeps the last valid animation", async () => {
+      p.click("next");
+      const before = p.progress();
+      type("1, two");
+      await vi.waitFor(() => expect(p.error()).toMatch(/whole number/));
+      expect(p.progress()).toEqual(before);
+    });
+
+    test("doesn't restart when the text changes but the input doesn't", async () => {
+      p.click("next"); p.click("next");
+      type(field().value + ",  ");
+      await new Promise(r => setTimeout(r, LIVE_INPUT_DELAY_MS + 100));
+      expect(p.progress()[0]).toBe(3);
+    });
   });
 
   test("Run with junk input shows an error and keeps the current run", () => {
