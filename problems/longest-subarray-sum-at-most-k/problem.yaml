@@ -1,0 +1,21 @@
+title: Longest Subarray With Sum At Most K
+summary: Grow the window on the right; shrink it from the left whenever its sum goes over k.
+explanation: >-
+  All the numbers are positive, so adding an element only raises the window's sum and removing one only
+  lowers it. Extend the window one element at a time on the right; whenever the sum goes over `k`,
+  drop elements from the left until it fits again. Each element joins and leaves the window at most
+  once, so this is `O(n)` instead of checking every subarray.
+source: Sliding-window example
+tags: [Arrays, Sliding window]
+complexity: { time: O(n), space: O(1) }
+entry: longestSubarray
+limits: { time_ms: 100 }
+input:
+  - { name: nums, type: "int[]", length: [1, 100000], value: [1, 10000] }
+  - { name: k, type: int, value: [1, 1000000000] }
+returns: int
+visualization:
+  default: { nums: [3, 1, 2, 7, 4, 2, 1, 1, 5], k: 8 }
+  limits:
+    nums: { length: [1, 12], value: [1, 99] }
+    k: { value: [1, 999] }

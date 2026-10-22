@@ -1,0 +1,21 @@
+title: Subarray Product Less Than K
+summary: For each right end, the valid windows are every start from left to right; add right − left + 1.
+explanation: >-
+  With positive numbers, a window's product only grows as it widens. Grow the window on the right and
+  shrink it from the left while the product is at least `k`. Then every subarray ending at `right` and
+  starting anywhere from `left` to `right` also has a product below `k`, and there are
+  `right − left + 1` of them. Adding that count for each right end counts every valid subarray once.
+source: LeetCode 713
+tags: [Arrays, Sliding window]
+complexity: { time: O(n), space: O(1) }
+entry: numSubarrayProductLessThanK
+limits: { time_ms: 100 }
+input:
+  - { name: nums, type: "int[]", length: [1, 30000], value: [1, 1000] }
+  - { name: k, type: int, value: [0, 1000000] }
+returns: int
+visualization:
+  default: { nums: [10, 5, 2, 6], k: 100 }
+  limits:
+    nums: { length: [1, 10], value: [1, 99] }
+    k: { value: [0, 9999] }

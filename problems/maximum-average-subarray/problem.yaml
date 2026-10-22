@@ -1,0 +1,23 @@
+title: Maximum Average Subarray I
+summary: The window with the biggest average is the one with the biggest sum, so slide a length-k window and divide once at the end.
+explanation: >-
+  All windows have the same length `k`, so the largest average belongs to the window with the largest
+  sum. Slide a length-`k` window across the array, updating its sum in `O(1)` per step (add the element
+  that enters, subtract the one that leaves), and divide the best sum by `k` once at the end.
+source: LeetCode 643
+tags: [Arrays, Sliding window]
+complexity: { time: O(n), space: O(1) }
+entry: findMaxAverage
+limits: { time_ms: 100 }
+input:
+  - { name: nums, type: "int[]", length: [1, 100000], value: [-10000, 10000] }
+  - { name: k, type: int, value: [1, 100000] }
+returns: float
+constraints_note:
+  - "`k ≤ nums.length`."
+visualization:
+  default: { nums: [1, 12, -5, -6, 50, 3], k: 4 }
+  limits:
+    nums: { length: [1, 12], value: [-99, 99] }
+    k: { value: [1, 12] }
+  code_note: Averages compare like sums when every window has k elements, so only one division is needed.
