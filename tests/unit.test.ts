@@ -24,12 +24,12 @@ describe("toDisplayCode", () => {
     ]);
   });
 
-  test("maps each label to its 1-based line number", () => {
-    expect(toDisplayCode(src).labels).toEqual({ init: 2, add: 3 });
+  test("maps each label to its 1-based line numbers", () => {
+    expect(toDisplayCode(src).labels).toEqual({ init: [2], add: [3] });
   });
 
-  test("rejects duplicate labels", () => {
-    expect(() => toDisplayCode("a // @line x\nb // @line x")).toThrow(/Duplicate @line label "x"/);
+  test("a label on several lines makes a block highlighted together", () => {
+    expect(toDisplayCode("left++; // @line move\nright--; // @line move\nreturn x; // @line done").labels).toEqual({ move: [1, 2], done: [3] });
   });
 });
 

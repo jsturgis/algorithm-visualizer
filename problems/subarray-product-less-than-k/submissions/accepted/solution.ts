@@ -5,7 +5,7 @@ export function numSubarrayProductLessThanK(nums: number[], k: number): number {
         product *= nums[right]; // @line multiply
         while (product >= k) { // @line too-big
             product /= nums[left]; // @line shrink
-            left++;
+            left++; // @line shrink
         }
         count += right - left + 1; // @line count
     }

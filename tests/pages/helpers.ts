@@ -67,9 +67,12 @@ export class Page {
     return card.querySelector(".v")!.textContent;
   }
 
+  /** The first highlighted line (a step may highlight a block of several). */
   highlightedLine() {
-    const on = this.$$(".ln.on");
-    return on.length === 1 ? Number(on[0].dataset.l) : null;
+    return this.highlightedLines()[0] ?? null;
+  }
+  highlightedLines() {
+    return this.$$(".ln.on").map(l => Number(l.dataset.l));
   }
   highlightedCode() {
     return this.$(".ln.on")?.textContent?.replace(/^\d+/, "").trim() ?? null;

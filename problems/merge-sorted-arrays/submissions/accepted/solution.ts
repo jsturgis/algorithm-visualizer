@@ -1,6 +1,6 @@
 export function mergeSorted(arr1: number[], arr2: number[]): number[] {
     const merged: number[] = []; // @line init
-    let i = 0, j = 0;
+    let i = 0, j = 0; // @line init
     while (i < arr1.length && j < arr2.length) { // @line loop
         if (arr1[i] <= arr2[j]) merged.push(arr1[i++]); // @line take-1
         else merged.push(arr2[j++]); // @line take-2

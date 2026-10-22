@@ -30,8 +30,8 @@ export interface Editor {
   setText(text: string): void;
   /** Move the cursor to `offset` and focus the editor. */
   goTo(offset: number): void;
-  /** Highlight a 1-based line as the current step's line, or clear it. */
-  highlightLine(line: number | null): void;
+  /** Highlight the current step's 1-based lines (empty to clear). */
+  highlightLine(lines: number[]): void;
   destroy(): void;
 }
 
@@ -39,17 +39,15 @@ export interface Editor {
 export const workerChecker: CheckerFactory = (contract: Contract) =>
   overWorker(new Worker(new URL("./checker.worker.ts", import.meta.url), { type: "module", name: "type-checker" }))(contract);
 
-const setStepLine = StateEffect.define<number | null>();
+const setStepLine = StateEffect.define<number[]>();
 const stepLine = StateField.define<DecorationSet>({
   create: () => Decoration.none,
   update(deco, tr) {
     deco = deco.map(tr.changes);
     for (const e of tr.effects) {
       if (!e.is(setStepLine)) continue;
-      const n = e.value;
-      deco = n !== null && n >= 1 && n <= tr.state.doc.lines
-        ? Decoration.set([Decoration.line({ class: "cm-step-line" }).range(tr.state.doc.line(n).from)])
-        : Decoration.none;
+      const valid = e.value.filter(n => n >= 1 && n <= tr.state.doc.lines).sort((a, b) => a - b);
+      deco = Decoration.set(valid.map(n => Decoration.line({ class: "cm-step-line" }).range(tr.state.doc.line(n).from)));
     }
     return deco;
   },

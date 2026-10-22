@@ -44,7 +44,7 @@ export interface EditingOptions {
 
 export interface Editing {
   /** The player reports the highlighted line on every step. */
-  setLine(line: number | null): void;
+  setLine(lines: number[]): void;
   /** Resolves when Edit has finished opening (for tests). */
   ready(): Promise<void>;
   editor(): Editor | null;
@@ -129,7 +129,7 @@ export function attachEditing(o: EditingOptions): Editing {
   let checker: AsyncChecker | null = null;
   let opening: Promise<void> | null = null;
   let editing = false;
-  let line: number | null = null;
+  let line: number[] = [];
   let loadError = "";
   let loadOutdated = false;
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -166,7 +166,7 @@ export function attachEditing(o: EditingOptions): Editing {
   }
 
   function syncHighlight() {
-    editor?.highlightLine(changed() ? null : line);
+    editor?.highlightLine(changed() ? [] : line);
     resetBtn.hidden = !editing || !changed();
     if (resetBtn.hidden) confirmBox.hidden = true;
     showStatus();

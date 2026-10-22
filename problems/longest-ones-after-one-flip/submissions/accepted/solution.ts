@@ -4,7 +4,7 @@ export function longestOnesAfterFlip(s: string): number {
         if (s[right] === "0") zeros++; // @line add
         while (zeros > 1) { // @line too-many
             if (s[left] === "0") zeros--; // @line shrink
-            left++;
+            left++; // @line shrink
         }
         best = Math.max(best, right - left + 1); // @line best
     }

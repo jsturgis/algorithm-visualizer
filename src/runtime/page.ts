@@ -32,7 +32,7 @@ export function mountAlgorithm(mod: AlgorithmModule, doc: Document = document, o
 
   // The player reports the highlighted line before edit mode exists; keep the latest for it.
   let editing: Editing | null = null;
-  let line: number | null = null;
+  let line: number[] = [];
 
   const player = createPlayer<Input>({
     doc,
