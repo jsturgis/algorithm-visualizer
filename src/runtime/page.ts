@@ -5,7 +5,7 @@ import { attachEditing, type Editing, type EditingOptions } from "./editing.ts";
 import { createPlayer, type Player } from "./player.ts";
 import { BROWSER_TIME_MULTIPLIER, contractOf, type AlgorithmModule, type Input } from "./types.ts";
 
-export type MountOptions = Pick<EditingOptions, "storage" | "loadEditor" | "checker" | "debounceMs" | "runner" | "loadJudge">;
+export type MountOptions = Pick<EditingOptions, "storage" | "loadEditor" | "checker" | "debounceMs" | "runner" | "loadJudge" | "reload">;
 export type MountedPage = Player & { editing: Editing };
 
 export function mountAlgorithm(mod: AlgorithmModule, doc: Document = document, opts: MountOptions = {}): MountedPage {

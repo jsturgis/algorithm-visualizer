@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { toDisplayCode } from "../build/code.ts";
 import { checkInput, formatField, parseField, withLimits } from "../src/runtime/constraints.ts";
 import type { Param } from "../src/runtime/types.ts";
+import { isOutdatedBuild } from "../src/runtime/editing.ts";
 
 describe("toDisplayCode", () => {
   const src = [
@@ -68,5 +69,20 @@ describe("constraints", () => {
     expect(parseField(" 4 ", params[1])).toBe(4);
     expect(() => parseField("1, x", params[0])).toThrow(/whole numbers/);
     expect(() => parseField("", params[1])).toThrow(/whole number/);
+  });
+});
+
+describe("isOutdatedBuild", () => {
+  test.each([
+    "Failed to fetch dynamically imported module: https://x.test/assets/panel-A1.js",   // Chrome
+    "Importing a module script failed.",                                                 // Safari
+    "error loading dynamically imported module: https://x.test/assets/editor-B2.js",   // Firefox
+    "Unable to preload CSS for /assets/panel-C3.css",                                   // Vite
+  ])("recognizes %s", message => {
+    expect(isOutdatedBuild(new TypeError(message))).toBe(true);
+  });
+
+  test("ignores other errors", () => {
+    expect(isOutdatedBuild(new Error("The type checker stopped."))).toBe(false);
   });
 });
