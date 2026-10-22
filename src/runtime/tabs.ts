@@ -1,7 +1,9 @@
-// The Problem / Code tabs in the left pane. The first visit to an algorithm opens on Problem; after that
-// the page remembers the last tab per algorithm. ← and → are left alone: they step the player.
+// The tabs in the left pane: Problem, an optional Analogy, and Code. The first visit to an algorithm opens
+// on Problem; after that the page remembers the last tab per algorithm. ← and → are left alone: they step
+// the player.
 
-export type Tab = "problem" | "code";
+/** A tab's name, from its data-tab attribute: "problem", "analogy" or "code". */
+export type Tab = string;
 
 export interface TabsOptions {
   doc: Document;
@@ -19,14 +21,14 @@ export function attachTabs({ doc, slug, storage }: TabsOptions): Tabs {
   const key = `algorithm-visualizer:tab:${slug}`;
   const buttons = [...doc.querySelectorAll<HTMLButtonElement>("[data-tab]")];
   const panels = [...doc.querySelectorAll<HTMLElement>("[data-tab-panel]")];
+  const names = buttons.map(b => b.dataset.tab!);
   let active: Tab = "problem";
 
   function show(tab: Tab, remember = true) {
     active = tab;
     for (const b of buttons) {
-      const on = b.dataset.tab === tab;
-      // Both tabs stay in the Tab order: arrow-key tab switching would clash with the player's ← and →.
-      b.setAttribute("aria-selected", String(on));
+      // Every tab stays in the Tab order: arrow-key tab switching would clash with the player's ← and →.
+      b.setAttribute("aria-selected", String(b.dataset.tab === tab));
     }
     for (const p of panels) p.hidden = p.dataset.tabPanel !== tab;
     if (remember) {
@@ -34,11 +36,12 @@ export function attachTabs({ doc, slug, storage }: TabsOptions): Tabs {
     }
   }
 
-  for (const b of buttons) b.onclick = () => show(b.dataset.tab as Tab);
+  for (const b of buttons) b.onclick = () => show(b.dataset.tab!);
 
   let saved: string | null = null;
   try { saved = storage?.getItem(key) ?? null; } catch { /* first visit, as far as we can tell */ }
-  show(saved === "code" ? "code" : "problem", false);
+  // A saved tab this page doesn't have (e.g. an Analogy removed since) falls back to Problem.
+  show(saved && names.includes(saved) ? saved : "problem", false);
 
   return { show: tab => show(tab), current: () => active };
 }

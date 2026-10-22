@@ -2,6 +2,7 @@
 //
 //   problem.yaml                          metadata, constraints, visualization settings
 //   problem_statement/statement.md
+//   problem_statement/analogy.md          optional: an everyday analogy, shown in an Analogy tab
 //   data/sample/*.in, *.ans               examples (JSON): input object / expected answer
 //   data/invalid_input/*.in               inputs the validator must reject
 //   generators/generators.ts              `random` (fast-check arbitrary), `edge`, `large`
@@ -64,6 +65,8 @@ export interface Package {
   dir: string;
   meta: ProblemMeta;
   statement: string;
+  /** Markdown for the optional Analogy tab. */
+  analogy?: string;
   samples: TestCase[];
   invalid: TestCase[];
   code: Code;
@@ -118,6 +121,7 @@ export function loadPackage(dir: string): Package {
     dir,
     meta,
     statement: readFileSync(required(rel("problem_statement/statement.md")), "utf8"),
+    analogy: existsSync(rel("problem_statement/analogy.md")) ? readFileSync(rel("problem_statement/analogy.md"), "utf8") : undefined,
     samples,
     invalid: files(rel("data/invalid_input"), ".in").map(f => ({ name: `invalid_input/${path.basename(f, ".in")}`, input: json(f) })),
     code: toDisplayCode(readFileSync(solution, "utf8")),
