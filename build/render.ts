@@ -35,17 +35,6 @@ Output: ${esc(show(t.answer))}</pre>`).join("");
     <div class="meta">${meta.tags.map(t => `<span class="tag">${esc(t)}</span>`).join("")}<span class="tag mono">${esc(meta.complexity.time)} time</span><span class="tag mono">${esc(meta.complexity.space)} space</span></div>
   </header>
 
-  <div class="panel" data-controls></div>
-
-  <div class="grid">
-    <div class="panel" data-code></div>
-    <div class="panel stage">
-      <div data-stage></div>
-      <p class="note" data-note></p>
-      <div data-input></div>
-    </div>
-  </div>
-
   <details class="panel statement">
     <summary>Problem statement</summary>
     ${marked.parse(pkg.statement)}
@@ -54,6 +43,16 @@ Output: ${esc(show(t.answer))}</pre>`).join("");
     <ul>${[...constraintLines(meta.input), ...meta.constraints_note].map(c => `<li>${marked.parseInline(c)}</li>`).join("")}</ul>
     ${meta.source ? `<p class="source">Source: ${esc(meta.source)}</p>` : ""}
   </details>
+
+  <div class="grid">
+    <div class="panel" data-code></div>
+    <div class="panel" data-controls></div>
+    <div class="panel stage">
+      <div data-stage></div>
+      <p class="note" data-note></p>
+      <div data-input></div>
+    </div>
+  </div>
 </div>`;
 }
 
