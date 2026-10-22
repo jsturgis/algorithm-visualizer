@@ -1,0 +1,19 @@
+title: Longest Run of 1s After One Flip
+summary: Keep a window containing at most one 0; that one 0 is the character you'd flip.
+explanation: >-
+  Flipping one `0` to `1` joins the runs of 1s on either side of it, so the question becomes: what's the
+  longest substring containing at most one `0`? Grow a window on the right, counting its zeros; when it
+  holds two, shrink from the left until one of them leaves. The longest window seen is the answer.
+source: Sliding-window example
+tags: [Strings, Sliding window]
+complexity: { time: O(n), space: O(1) }
+entry: longestOnesAfterFlip
+limits: { time_ms: 100 }
+input:
+  - { name: s, type: string, length: [1, 100000], chars: "[01]" }
+returns: int
+visualization:
+  default: { s: "1101100111" }
+  limits:
+    s: { length: [1, 14] }
+  labels: { s: s (0s and 1s) }

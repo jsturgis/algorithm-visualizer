@@ -1,0 +1,22 @@
+title: Max Consecutive Ones III
+summary: Keep a window with at most k zeros; those are the 0s you'd flip.
+explanation: >-
+  Flipping up to `k` zeros makes any window with at most `k` zeros all ones, so the answer is the
+  longest window containing at most `k` zeros. Grow the window on the right, counting zeros; when the
+  count goes over `k`, shrink from the left until it doesn't. Each element enters and leaves once:
+  `O(n)`.
+source: LeetCode 1004
+tags: [Arrays, Sliding window]
+complexity: { time: O(n), space: O(1) }
+entry: longestOnes
+limits: { time_ms: 100 }
+input:
+  - { name: nums, type: "int[]", length: [1, 100000], value: [0, 1] }
+  - { name: k, type: int, value: [0, 100000] }
+returns: int
+visualization:
+  default: { nums: [1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0], k: 2 }
+  limits:
+    nums: { length: [1, 14] }
+    k: { value: [0, 14] }
+  labels: { nums: nums (0s and 1s) }
