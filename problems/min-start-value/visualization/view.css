@@ -1,6 +1,6 @@
 /* Running-sum chart */
 .chart-wrap { overflow-x: auto; }
-svg.chart { display: block; width: 100%; min-width: 360px; height: auto; font-family: var(--mono); }
+svg.chart { display: block; width: 100%; max-width: 760px; min-width: 360px; height: auto; margin-inline: auto; font-family: var(--mono); }
 .chart .grid-l { stroke: var(--line); stroke-width: 1; }
 .chart .zero { stroke: var(--muted); stroke-width: 1.2; }
 .chart .tick { fill: var(--muted); font-size: 11px; }
