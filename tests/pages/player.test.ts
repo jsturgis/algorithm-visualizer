@@ -27,6 +27,13 @@ describe.each(Object.values(modules))("$meta.title page", mod => {
     if (mod.meta.source) expect(statement).toContain(mod.meta.source);
   });
 
+  test("puts the controls first, then the code panel, then the animation", () => {
+    const order = [p.$("[data-controls]"), p.$("[data-code]"), p.$(".stage")];
+    for (let i = 1; i < order.length; i++) {
+      expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
   test("links back to the home page", () => {
     expect(p.$$(".topbar a").map(a => a.getAttribute("href"))).toContain("../../");
   });
