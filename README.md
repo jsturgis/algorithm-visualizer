@@ -15,6 +15,7 @@ src/styles/base.css          shared colours, layout and components
 site/index.html              home page shell (algorithm pages are generated into site/algorithms/)
 build/                       package loader, verifier, page renderer, Vite plugin
 scripts/verify.ts            `npm run verify`
+scripts/new.ts               `npm run new`: the new-package wizard (build/wizard.ts, build/scaffold.ts, build/leetcode.ts)
 tests/                       Vitest: package checks, verifier self-tests, pages, build output
 ```
 
@@ -104,6 +105,7 @@ The checker runs in a Web Worker using **TypeScript 6.0.3** (`typescript-js` in 
 npm install
 npm run dev          # local site with live reload at http://localhost:5173
 npm run verify       # check every problem package (or: npm run verify -- binary-search)
+npm run new          # wizard: create a problem package (npm run new -- --help for options)
 npm test             # all tests (also runs the package checks)
 npm run typecheck
 npm run build        # static site in dist/
@@ -113,6 +115,14 @@ npm run check        # everything CI runs
 Requires Node 22.18 or newer, which runs the TypeScript in `scripts/` and `problems/` directly.
 
 ## Add an algorithm
+
+Start with `npm run new`. The wizard asks for the slug (the page's URL), the entry function, its parameters with their constraints, and the return type. It writes `problems/<slug>/` with every file already matching that contract: `problem.yaml`, typed submission stubs, generators built from the constraints, samples, invalid inputs, and a trace and view to fill in. Then it runs the verifier and lists the steps below that are still left. The stubs fail on purpose, so a new package can't pass until its algorithm is written.
+
+To start from a LeetCode problem, give its URL, for example `npm run new -- --leetcode https://leetcode.com/problems/binary-search/`. The wizard imports the statement, examples, constraints, signature and tags. Constraints it can't express as ranges become `constraints_note`. It also imports the editorial's approaches, with their complexity and their code to port. Problem pages, free editorials and playgrounds work without a login.
+
+Premium editorials and explore cards need one. Copy the `LEETCODE_SESSION` cookie from a signed-in browser into `.env` at the repo root as `LEETCODE_SESSION=<value>`; git ignores `.env`. Then give the problem's page inside an explore card (for example `.../card/<card>/703/arraystrings/4658/`), and the wizard collects the solutions from that chapter's articles. Extra playgrounds or article links go in `--playground`, once each. JavaScript solutions are converted to typed TypeScript, and you pick which one becomes the accepted solution and which one becomes the brute force. `--yes` takes every default without asking. `--dry-run` lists the files without writing them.
+
+To do it by hand instead:
 
 1. Copy `problems/_template/` to `problems/<slug>/`. The folder name becomes the page's URL.
 2. Fill in `problem.yaml` and the statement, then add samples and invalid inputs under `data/`.

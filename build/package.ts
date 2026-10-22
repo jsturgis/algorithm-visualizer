@@ -33,7 +33,7 @@ const Param = z.strictObject({
   .refine(p => !p.chars || p.type === "string" || p.type === "string[]", "chars is only for string and string[]")
   .refine(p => !p.value || p.type.startsWith("int"), "value is only for int types");
 
-const MetaSchema = z.strictObject({
+export const MetaSchema = z.strictObject({
   title: z.string().min(1),
   summary: z.string().min(1),
   explanation: z.string().min(1),
