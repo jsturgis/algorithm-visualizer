@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run typecheck && npm run verify && npm test && npm run build"
+    "check": "npm run typecheck && npm run verify && npm test && npm run build",
+    "new": "node scripts/new.ts"
   },
   "devDependencies": {
     "@codemirror/autocomplete": "^6.20.4",
