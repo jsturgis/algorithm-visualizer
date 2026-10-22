@@ -58,8 +58,9 @@ Output: ${esc(show(t.answer))}</pre>`).join("");
     </section>
 
     <section class="pane pane-right stage" aria-label="Animation">
+      <p class="current-line" data-current-line aria-hidden="true"></p>
       <div data-stage></div>
-      <p class="note" data-note></p>
+      <p class="note" data-note aria-live="polite"></p>
       <div data-input></div>
     </section>
 

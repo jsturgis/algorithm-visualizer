@@ -79,16 +79,48 @@ header p { margin: 0; color: var(--muted); max-width: 70ch; }
 .pane-right { container-type: inline-size; }
 @container (max-width: 620px) {
   .pane-right .box { width: 40px; height: 40px; font-size: 15px; border-radius: 7px; }
+  .pane-right .spacer { width: 40px; }   /* K Radius's alignment column matches the box width */
   .pane-right .strip { gap: 6px; }
 }
+@container (max-width: 460px) {
+  /* Fits 11 columns (K Radius: a spacer + prefix's n + 1 cells) in a phone-width pane. */
+  .pane-right .box { width: 27px; height: 27px; font-size: 11px; border-width: 1.5px; border-radius: 5px; }
+  .pane-right .spacer { width: 27px; }
+  .pane-right .strip { gap: 3px; }
+  .pane-right .idx { font-size: 10px; }
+}
+/* Phones: one row of icon buttons in the control bar. */
+@media (max-width: 600px) {
+  .control-bar { padding: 8px 10px; }
+  .control-bar .btn-label { display: none; }
+  .control-bar.controls { flex-wrap: nowrap; gap: 6px; }
+  .control-bar button { padding: 8px 12px; }
+  .control-bar button.primary { min-width: 48px; }
+  .control-bar .speed input { width: 72px; }
+  .control-bar .progress { font-size: 12px; white-space: nowrap; }
+}
+
+.input-row .field { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+/* The current code line, repeated above the animation on narrow screens (desktop shows the code beside it). */
+.current-line { display: none; margin: 0; font: 13px/1.6 var(--mono); background: var(--hl); border-left: 3px solid var(--fg); border-radius: 6px; padding: 6px 10px; overflow-x: auto; white-space: pre; }
+.current-line:empty { display: none !important; }
+.current-line .no { color: var(--muted); margin-right: 10px; }
+.current-line code { font: inherit; }
 
 @media (min-width: 1024px) {
+  /* Keep the tabs and the code actions (Edit, Run tests, Reset) in view while the left pane scrolls. */
+  .pane-left .tabs { position: sticky; top: -16px; z-index: 3; background: var(--panel); margin: -16px -16px 14px; padding: 16px 16px 8px; }
+  .pane-left .code-head { position: sticky; top: 38px; z-index: 2; background: var(--panel); margin-inline: -16px; padding: 4px 16px 8px; }
   .wrap.workspace-page { height: 100dvh; box-sizing: border-box; padding-block: 12px; grid-template-rows: auto auto minmax(0, 1fr); }
   .workspace { grid-template-columns: minmax(420px, 5fr) minmax(0, 6fr); grid-template-rows: minmax(0, 1fr) auto; min-height: 0; }
   .pane { overflow: auto; min-height: 0; }
   .control-bar { grid-column: 1 / -1; }
 }
 @media (max-width: 1023px) {
+  /* The animation first, with the current code line above it, so Play shows what's happening. */
+  .pane-right { order: -1; }
+  .pane { padding: 12px; }
+  .current-line { display: block; }
   .control-bar { position: sticky; bottom: 0; z-index: 5; border-radius: 10px 10px 0 0; box-shadow: 0 -6px 16px rgb(0 0 0 / .08); }
 }
 

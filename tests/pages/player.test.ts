@@ -84,6 +84,47 @@ describe.each(Object.values(modules))("$meta.title page", mod => {
     expect(p.progress()[0]).toBe(1);
   });
 
+  test("Space on a focused button or tab presses it instead of playing", () => {
+    for (const sel of ['[data-act="next"]', '[data-tab="code"]', '[data-act="reset"]']) {
+      const el = p.$<HTMLElement>(sel);
+      el.focus();
+      el.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true }));
+      expect(p.button("play").getAttribute("aria-label"), sel).toBe("Play");
+    }
+  });
+
+  test("arrow keys on the speed slider change the speed, not the step; on a button they still step", () => {
+    const slider = p.$<HTMLInputElement>('[data-act="speed"]');
+    slider.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    expect(p.progress()[0]).toBe(1);
+    p.button("next").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    expect(p.progress()[0]).toBe(2);
+  });
+
+  test("the speed slider and the icon buttons have accessible names", () => {
+    const slider = p.$<HTMLInputElement>('[data-act="speed"]');
+    expect(slider.getAttribute("aria-label")).toBe("Speed");
+    expect(slider.getAttribute("aria-valuetext")).toBe("Normal");
+    slider.value = "5";
+    slider.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(slider.getAttribute("aria-valuetext")).toBe("Fastest");
+    expect(["reset", "prev", "play", "next"].map(a => p.button(a).getAttribute("aria-label"))).toEqual(["Restart", "Back", "Play", "Step"]);
+    p.click("play");
+    expect(p.button("play").getAttribute("aria-label")).toBe("Pause");
+    p.click("play");
+  });
+
+  test("the step note is announced to screen readers", () => {
+    expect(p.$("[data-note]").getAttribute("aria-live")).toBe("polite");
+  });
+
+  test("the current code line is repeated beside the animation", () => {
+    p.click("next"); p.click("next");
+    const line = p.highlightedLine()!;
+    expect(p.$("[data-current-line] .no").textContent).toBe(String(line));
+    expect(p.$("[data-current-line] code").textContent).toBe(mod.code.lines[line - 1].trim());
+  });
+
   test("Play switches to Pause, and Pause stops", () => {
     p.click("play");
     expect(p.button("play").textContent).toContain("Pause");

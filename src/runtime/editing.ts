@@ -36,6 +36,8 @@ export interface EditingOptions {
   runner?: () => Runner;
   /** Loads the judge module. Tests may replace it; the page loads it lazily. */
   loadJudge?: () => Promise<typeof Panel>;
+  /** Animate a failing test's input. Returns an error message when it can't. */
+  stepThrough?: (input: Record<string, unknown>) => string | null;
 }
 
 export interface Editing {
@@ -194,8 +196,9 @@ export function attachEditing(o: EditingOptions): Editing {
         onProgress: p => panel!.renderProgress(verdictEl, p, cancel),
       });
       runner.dispose();
-      panel.renderVerdict(verdictEl, verdict, o.contract);
+      panel.renderVerdict(verdictEl, verdict, o.contract, { onStepThrough: o.stepThrough });
       ranText = normalize(source);
+      verdictEl.scrollIntoView?.({ block: "nearest" });
       return verdict;
     } catch (e) {
       verdictEl.hidden = false;
@@ -270,6 +273,11 @@ export function attachEditing(o: EditingOptions): Editing {
     confirmBox.hidden = true;
     editor?.setText(reference);
     clearTimeout(saveTimer);
+    // The old verdict was about the discarded code.
+    verdictEl.hidden = true;
+    verdictEl.textContent = "";
+    delete verdictEl.dataset.verdict;
+    ranText = null;
     try { storage?.removeItem(key); } catch { /* nothing saved */ }
     syncHighlight();
   };

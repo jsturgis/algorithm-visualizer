@@ -23,6 +23,8 @@
 .verdict .difference, .verdict .type-note { font-size: 13px; color: var(--muted); }
 .verdict .error-message { margin: 0; padding: 8px 10px; background: var(--low-soft); color: var(--low); border-radius: 6px; font: 13px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
 
+.verdict [data-judge="step-through"] { justify-self: start; padding: 4px 10px; font-size: 13px; }
+.verdict .step-through-note { font-size: 13px; color: var(--muted); }
 .verdict .progress-line { display: flex; gap: 8px; align-items: center; }
 .verdict [data-judge="cancel"] { justify-self: start; padding: 4px 10px; font-size: 13px; }
 .spinner { width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--fg); border-radius: 50%; animation: spin .8s linear infinite; flex: none; }
