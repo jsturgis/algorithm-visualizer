@@ -11,6 +11,9 @@ export const highlight = (line: string) => esc(line)
 
 export interface Field { id: string; label: string; value: string; short?: boolean }
 
+/** How long after the last keystroke in an input field the animation redraws for the new input. */
+export const LIVE_INPUT_DELAY_MS = 400;
+
 export interface PlayerOptions<I> {
   doc?: Document;
   code: Code;
@@ -121,16 +124,42 @@ export function createPlayer<I>(o: PlayerOptions<I>): Player {
   btn("reset").onclick = () => go(0);
 
   const err = inputBox.querySelector(".err")!;
+  let shown = "";   // the input currently animated, as JSON
+  let liveTimer: ReturnType<typeof setTimeout> | undefined;
+  const parseFields = (): I | null => {
+    try {
+      const parsed = o.parse(readFields());
+      err.textContent = "";
+      return parsed;
+    } catch (e) {
+      err.textContent = (e as Error).message;
+      return null;
+    }
+  };
+  // Run / Enter: redraw for the fields' input and play it.
   const apply = () => {
-    let parsed: I;
-    try { parsed = o.parse(readFields()); }
-    catch (e) { err.textContent = (e as Error).message; return; }
-    err.textContent = "";
+    clearTimeout(liveTimer);
+    const parsed = parseFields();
+    if (parsed === null) return;
+    shown = JSON.stringify(parsed);
     load(parsed); play();
   };
   (inputBox.querySelector('[data-act="apply"]') as HTMLButtonElement).onclick = apply;
   inputBox.addEventListener("keydown", e => {
     if (e.key === "Enter" && (e.target as HTMLElement).tagName === "INPUT") apply();
+  });
+  // Typing: follow the fields once the learner pauses. A valid new input redraws the animation at step 1,
+  // paused; an invalid one shows its error and keeps the last valid animation.
+  inputBox.addEventListener("input", () => {
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => {
+      const parsed = parseFields();
+      if (parsed === null) return;
+      const key = JSON.stringify(parsed);
+      if (key === shown) return;
+      shown = key;
+      load(parsed);
+    }, LIVE_INPUT_DELAY_MS);
   });
 
   const onKey = (e: KeyboardEvent) => {
@@ -146,11 +175,13 @@ export function createPlayer<I>(o: PlayerOptions<I>): Player {
   };
   doc.addEventListener("keydown", onKey);
 
-  load(o.parse(readFields()));
+  const initial = o.parse(readFields());
+  shown = JSON.stringify(initial);
+  load(initial);
   return {
     load: input => load(input as I),
     play,
     stop,
-    destroy: () => { stop(); doc.removeEventListener("keydown", onKey); },
+    destroy: () => { stop(); clearTimeout(liveTimer); doc.removeEventListener("keydown", onKey); },
   };
 }
