@@ -1,0 +1,25 @@
+title: Subarray Sum Queries
+summary: Build a prefix sum once; then each query's range sum is one subtraction instead of a loop.
+explanation: >-
+  Adding up `nums[x..y]` for every query costs `O(n)` each. Instead, build the prefix sum once:
+  `prefix[i]` is the sum of `nums[0..i]`. Then the sum of `nums[x..y]` is
+  `prefix[y] − prefix[x] + nums[x]` (everything up to `y`, minus everything up to `x`, plus `nums[x]`
+  back). That makes every query `O(1)`.
+source: Prefix-sum example
+tags: [Arrays, Prefix sum]
+complexity: { time: O(n + q), space: O(n) }
+entry: answerQueries
+limits: { time_ms: 200 }
+input:
+  - { name: nums, type: "int[]", length: [1, 100000], value: [-10000, 10000] }
+  - { name: queries, type: "int[][]", length: [1, 100000], inner_length: [2, 2], value: [0, 99999] }
+  - { name: limit, type: int, value: [-1000000000, 1000000000] }
+returns: "bool[]"
+constraints_note:
+  - "Each query is `[x, y]` with `0 ≤ x ≤ y < nums.length`."
+visualization:
+  default: { nums: [1, 6, 3, 2, 7, 2], queries: [[0, 3], [2, 5], [2, 4]], limit: 13 }
+  limits:
+    nums: { length: [1, 10], value: [-99, 99] }
+    queries: { length: [1, 6] }
+  labels: { queries: "queries ([x, y], …)" }
